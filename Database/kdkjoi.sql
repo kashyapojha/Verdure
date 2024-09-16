@@ -1,0 +1,1 @@
+SELECT * FROM vr_garden.plant_table;

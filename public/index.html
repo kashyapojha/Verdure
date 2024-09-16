@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Search</title>
+    <!-- Main Parallex Css -->
+    <link rel="stylesheet" href="css/parllex.css">
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <!-- bootstrap icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+</head>
+
+<body>
+    <audio src="parallex/back-sound.mp3" autoplay></audio>
+
+    <section id="home" class="parallex">
+        <h1 id="main-text">Verdure</h1>
+        <img src="parallex/left-down-leaf.png" id="left-down-leaf">
+        <img src="parallex/right-down-leaf.png" id="right-down-leaf">
+        <img src="parallex/right-down-stone.png" id="right-down-stone">
+        <img src="parallex/top-left.png" id="top-left">
+        <img src="parallex/right-tree.png" id="right-tree">
+    </section>
+
+    <section id="about" class="sec">
+        <h1 class="About-heading">About Verdure</h1>
+        <p>Verdure is a comprehensive platform that delves into the fascinating world of medicinal plants, catering to
+            herbal enthusiasts, researchers, students, and individuals interested in natural remedies. The platform
+            offers a user-friendly interface that enables users to search for plants by either their common or
+            scientific names. The search bar, combined with advanced filtering options, provides an efficient way to
+            refine searches based on specific criteria such as medicinal properties, geographic origins, or health
+            benefits. This makes it easy for users to find exactly what they’re looking for, whether they’re researching
+            plants for digestive health, immune support, or skincare. Verdure’s extensive and well-curated database
+            ensures that users have access to accurate and up-to-date information about a wide variety of plants,
+            including their uses, benefits, and traditional origins.
+        </p>
+        <p>One of Verdure's standout features is its integration of 3D models, offering an immersive way to explore
+            medicinal plants. These models allow users to rotate, zoom, and view plants from multiple angles, providing
+            a detailed understanding of their structure and key identifying features. This level of interactivity is
+            especially useful for educational purposes, enabling students and researchers to get a closer look at plants
+            without needing to be in a natural setting. The detailed 3D visualization enhances the learning experience
+            and assists users in identifying plants in real life. Additionally, Verdure includes an AI-powered feature
+            that allows users to submit health-related queries. The AI model analyzes these queries and provides
+            relevant answers, including suggestions for medicinal plants that may help address the user's concerns. This
+            feature bridges the gap between traditional knowledge and modern technology, offering personalized,
+            research-based advice for users seeking natural remedies. With its combination of powerful search
+            capabilities, immersive 3D models, and AI-driven insights, Verdure stands out as a valuable resource for
+            exploring the healing power of nature.</p>
+    </section>
+
+
+    <div class="kuula-embed-container">
+        <script src="https://static.kuula.io/embed.js"
+            data-kuula="https://kuula.co/share/NrQ27?logo=1&info=1&fs=1&vr=0&zoom=1&sd=1&autorotate=0.17&thumbs=1&inst=0"
+            data-width="1800px" data-height="900px"></script>
+    </div>
+
+    <div class="main-work-section">
+
+        <div class="navbar">
+            <h4 class="logo">Verdure</h4>
+            <div class="side-nav">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#about" class="nav-link">About us</a>
+                <a onclick="showfilters()" class="nav-link" id="filterToggle">
+                    <i class="bi bi-funnel-fill"></i>
+                </a>
+
+            </div>
+        </div>
+
+        <div class="mid-section">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Enter plant name or common name">
+                <button id="searchBtn"><i class="bi bi-search"></i></button>
+            </div>
+
+            <div class="main-holder">
+                <div id="modelContainer"></div>
+                <div class="name-and-btn">
+                    <a class="plant-name">Plant name: <span id="sci-plant-name"></span></a>
+                    <a id="show-info-btn" onclick="showdiscription()"><i class="bi bi-info-circle"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div id="discription-card">
+            <div class="dis-title">
+                <h3>Plant Info</h3>
+                <a id="close-btn" onclick="hidediscription()"><i class="bi bi-x"></i></a>
+            </div>
+            <div id="plant-img-hold">
+            </div>
+
+            <div class="type">Type: <span id="pltype"></span></div>
+            <div class="region">Region Found: <span id="region"></span></div>
+            <div id="common-names-hold">
+                <a class="com-head">Common names: </a>
+                <a id="common-names"><span id="com-1"></span>||<span id="com-2"></span>||<span id="com-3"></span>.</a>
+            </div>
+            <div class="uses">uses: <span id="uses"></span></div>
+            <div class="discription">discription: <span id="discription"></span></div>
+        </div>
+
+        <div id="filter-section">
+            <h2>Filters</h2>
+            <div class="filter-hold">
+                <label><input type="checkbox" name="filter" value="digestive"> Digestive Health</label>
+                <label><input type="checkbox" name="filter" value="immunity"> Immunity</label>
+                <label><input type="checkbox" name="filter" value="skin"> Skin Care</label>
+                <label><input type="checkbox" name="filter" value="hair"> Hair Care</label>
+                <label><input type="checkbox" name="filter" value="eye"> Eye Health</label>
+                <label><input type="checkbox" name="filter" value="respiratory"> Respiratory Health</label>
+                <label><input type="checkbox" name="filter" value="heart"> Heart Health</label>
+                <label><input type="checkbox" name="filter" value="reproductive"> Reproductive Health</label>
+                <label><input type="checkbox" name="filter" value="other"> Other Medical Issues</label>
+            </div>
+            <div class="filter-btn">
+                <button onclick="showflpopup()" id="applybtn" class="apply">Apply</button>
+                <button onclick="hidefilters()" id="cancelbtn" class="cancel">Cancel</button>
+            </div>
+        </div>
+        <div id="filter-popup" class="filter-popup">
+            <div class="popup-title">
+                <h3 class="filter-res-heading"><span id="no-of-results"></span> Results Found</h3>
+                <a onclick="hideflpopup()" id="filter-popup-close"><i class="bi bi-x"></i></a>
+            </div>
+            <div id="results-area">
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/mainsearch.js"></script>
+    <script src="js/scrollEffect.js"></script>
+
+    <script src="js/discription.js"></script>
+</body>
+
+
+</html>
