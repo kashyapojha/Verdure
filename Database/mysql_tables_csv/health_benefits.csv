@@ -1,0 +1,141 @@
+plant_id,benefit_type,benefit_value,health_benefit_id
+HERB0002,Digestive health,1,2
+HERB0003,Digestive health,1,3
+HERB0004,Digestive health,1,4
+SHRUB0005,Digestive health,1,5
+SHRUB0008,Digestive health,1,8
+SHRUB0009,Digestive health,1,9
+SHRUB0010,Digestive health,1,10
+CLIMBER0021,Digestive health,1,21
+CREEPER0023,Digestive health,1,23
+TREE0024,Digestive health,1,24
+TREE0027,Digestive health,1,27
+SHRUB0030,Digestive health,1,30
+SHRUB0031,Digestive health,1,31
+CLIMBER0035,Digestive health,1,35
+TREE0046,Digestive health,1,46
+HERB0047,Digestive health,1,47
+CREEPER0049,Digestive health,1,49
+HERB0052,Digestive health,1,52
+HERB0054,Digestive health,1,54
+HERB0055,Digestive health,1,55
+CLIMBER0075,Digestive health,1,75
+HERB0082,Digestive health,1,82
+TREE0085,Digestive health,1,85
+TREE0086,Digestive health,1,86
+TREE0091,Digestive health,1,91
+HERB0001,Immunity,1,92
+HERB0002,Immunity,1,93
+HERB0006,Immunity,1,97
+SHRUB0007,Immunity,1,98
+SHRUB0011,Immunity,1,102
+TREE0012,Immunity,1,103
+HERB0015,Immunity,1,106
+CLIMBER0019,Immunity,1,110
+TREE0024,Immunity,1,115
+TREE0025,Immunity,1,116
+TREE0028,Immunity,1,119
+HERB0037,Immunity,1,128
+HERB0038,Immunity,1,129
+HERB0039,Immunity,1,130
+TREE0042,Immunity,1,133
+TREE0043,Immunity,1,134
+HERB0053,Immunity,1,144
+TREE0059,Immunity,1,150
+TREE0063,Immunity,1,154
+TREE0074,Immunity,1,165
+TREE0078,Immunity,1,169
+HERB0080,Immunity,1,171
+TREE0081,Immunity,1,172
+HERB0083,Immunity,1,174
+SHRUB0088,Immunity,1,179
+SHRUB0089,Immunity,1,180
+HERB0001,Skin care,1,183
+TREE0012,Skin care,1,194
+TREE0016,Skin care,1,198
+HERB0018,Skin care,1,200
+CLIMBER0020,Skin care,1,202
+TREE0028,Skin care,1,210
+SHRUB0032,Skin care,1,214
+CLIMBER0033,Skin care,1,215
+HERB0036,Skin care,1,218
+HERB0038,Skin care,1,220
+HERB0039,Skin care,1,221
+SHRUB0041,Skin care,1,223
+TREE0045,Skin care,1,227
+HERB0048,Skin care,1,230
+TREE0060,Skin care,1,242
+TREE0061,Skin care,1,243
+SHRUB0065,Skin care,1,247
+HERB0066,Skin care,1,248
+SHRUB0068,Skin care,1,250
+SHRUB0069,Skin care,1,251
+SHRUB0076,Skin care,1,258
+SHRUB0077,Skin care,1,259
+TREE0078,Skin care,1,260
+HERB0079,Skin care,1,261
+TREE0081,Skin care,1,263
+TREE0091,Skin care,1,273
+HERB0015,Hair care,1,288
+CLIMBER0020,Hair care,1,293
+TREE0024,Hair care,1,297
+TREE0026,Hair care,1,299
+CLIMBER0034,Hair care,1,307
+HERB0064,Hair care,1,337
+SHRUB0068,Hair care,1,341
+SHRUB0069,Hair care,1,342
+SHRUB0070,Hair care,1,343
+TREE0074,Hair care,1,347
+SHRUB0076,Hair care,1,349
+GRASS0014,Eye health,1,378
+TREE0016,Eye health,1,380
+CLIMBER0019,Eye health,1,383
+TREE0027,Eye health,1,391
+SHRUB0029,Eye health,1,393
+SHRUB0032,Eye health,1,396
+CLIMBER0034,Eye health,1,398
+HERB0037,Eye health,1,401
+HERB0047,Eye health,1,411
+HERB0058,Eye health,1,422
+HERB0003,Respiratory health,1,458
+HERB0039,Respiratory health,1,494
+SHRUB0040,Respiratory health,1,495
+CLIMBER0044,Respiratory health,1,499
+TREE0045,Respiratory health,1,500
+HERB0055,Respiratory health,1,510
+TREE0059,Respiratory health,1,514
+HERB0082,Respiratory health,1,537
+HERB0002,Heart health,1,548
+HERB0013,Heart health,1,559
+GRASS0014,Heart health,1,560
+TREE0025,Heart health,1,571
+TREE0026,Heart health,1,572
+CLIMBER0044,Heart health,1,590
+TREE0062,Heart health,1,608
+HERB0072,Heart health,1,618
+SEAWEED0017,Other medicinal uses,1,654
+SHRUB0029,Other medicinal uses,1,666
+TREE0042,Other medicinal uses,1,679
+HERB0048,Other medicinal uses,1,685
+CREEPER0050,Other medicinal uses,1,687
+CREEPER0051,Other medicinal uses,1,688
+HERB0056,Other medicinal uses,1,693
+HERB0057,Other medicinal uses,1,694
+HERB0058,Other medicinal uses,1,695
+CREEPER0067,Other medicinal uses,1,704
+HERB0071,Other medicinal uses,1,708
+TREE0073,Other medicinal uses,1,710
+SHRUB0077,Other medicinal uses,1,714
+HERB0079,Other medicinal uses,1,716
+HERB0080,Other medicinal uses,1,717
+TREE0084,Other medicinal uses,1,721
+HERB0090,Other medicinal uses,1,727
+SHRUB0007,Reproductive health,1,735
+SHRUB0011,Reproductive health,1,739
+HERB0022,Reproductive health,1,750
+TREE0062,Reproductive health,1,790
+HERB0064,Reproductive health,1,792
+CLIMBER0075,Reproductive health,1,803
+SHRUB0076,Reproductive health,1,804
+HERB0087,Reproductive health,1,815
+SHRUB0088,Reproductive health,1,816
