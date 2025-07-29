@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const mysql = require('mysql2'); // Use mysql2 instead of mysql
+const cors = require('cors');
 const app = express();
 const port = 5000;
 
@@ -19,6 +20,11 @@ connection.connect((err) => {
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use(cors({
+    origin: 'http://4.240.91.131', // or '*' for all origins
+    methods: ['GET', 'POST'],
+    credentials: true
+}));
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
