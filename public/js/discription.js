@@ -45,7 +45,7 @@ function showflpopup() {
 }
 
 function fetchFilteredData(filters) {
-    fetch('/api/filter', {
+    fetch('http://4.240.91.131:3030/api/filter', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

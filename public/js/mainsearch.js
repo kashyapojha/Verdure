@@ -6,7 +6,7 @@ import { OrbitControls } from "https://cdn.skypack.dev/three@0.129.0/examples/js
 function performSearch(searchTerm) {
     console.log(searchTerm);
     // Fetch plant data from the server using the search term
-    fetch(`/search?term=${searchTerm}`)
+    fetch(`http://4.240.91.131:3030/search?term=${searchTerm}`)
         .then(response => response.json())  // Parse the JSON response
         .then(data => {
             hidediscription();
