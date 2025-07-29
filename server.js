@@ -3,7 +3,7 @@ const path = require('path');
 const mysql = require('mysql2'); // Use mysql2 instead of mysql
 const cors = require('cors');
 const app = express();
-const port = 5000;
+const port = 3030;
 
 // Database connection
 const connection = mysql.createConnection({
