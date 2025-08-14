@@ -21,17 +21,9 @@ jobs:
         with:
           node-version: "18.20.8"
 
-      # 3️⃣ Install dependencies
+      # 3️⃣ Install dependencies locally (optional)
       - name: Install dependencies
         run: npm install
-
-      # 4️⃣ Run tests (optional — remove if not needed)
-      # - name: Run tests
-      #   run: npm test
-
-      # 5️⃣ Build (optional — remove if not needed)
-      # - name: Build project
-      #   run: npm run build
 
       # 6️⃣ Deploy to Azure VM via SSH
       - name: Deploy over SSH
@@ -41,7 +33,26 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /var/www/verdure   # <-- Change to your backend folder path on VM
+            cd /var/www/verdure
+
+            # Fix safe directory issue
+            git config --global --add safe.directory /var/www/verdure
+
+            # Pull latest changes
             git pull origin main
-            npm install --production
-            pm2 restart all
+
+            # Ensure correct permissions
+            sudo chown -R $USER:$USER /var/www/verdure
+            sudo chmod -R 755 /var/www/verdure
+
+            # Install dependencies without dev packages
+            npm install --production --unsafe-perm
+
+            # Restart or start PM2 process
+            if pm2 list | grep -q verdure; then
+              pm2 restart verdure
+            else
+              pm2 start npm --name verdure -- start
+            fi
+
+            pm2 save

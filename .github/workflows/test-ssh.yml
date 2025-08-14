@@ -17,3 +17,15 @@ jobs:
             echo "✅ GitHub Actions connected to VM!"
             hostname
             whoami
+
+            echo "🔍 Checking Verdure project directory..."
+            cd /var/www/verdure
+
+            echo "🛠 Fixing Git safe directory..."
+            git config --global --add safe.directory /var/www/verdure
+
+            echo "🛠 Ensuring correct permissions..."
+            sudo chown -R $USER:$USER /var/www/verdure
+            sudo chmod -R 755 /var/www/verdure
+
+            echo "✅ Directory permissions fixed and Git safe directory set."
