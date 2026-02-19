@@ -1,92 +1,79 @@
-const infobtn = document.getElementById('show-info-btn');
-const discriptioncard = document.getElementById('discription-card');
-const closeicon = document.getElementById('close-btn');
-
-function showdiscription() {
-    discriptioncard.style.display = 'flex';
-    discriptioncard.classList.add('animate__animated', 'animate__flipInY');
-}
-
-function hidediscription() {
-    discriptioncard.style.display = 'none';
-    discriptioncard.classList.remove('animate__animated', 'animate__flipInY');
-
-}
-
-const filtersection = document.getElementById('filter-section');
+const BASE_URL = "http://localhost:3030";
 
 function showfilters() {
-
-    filtersection.style.display = 'flex';
-    filtersection.classList.add('animate__animated', 'animate__fadeInLeft');
-
+    document.getElementById('filter-section').style.display = 'flex';
 }
-
 function hidefilters() {
-    filtersection.style.display = 'none';
-}
-
-const filterpopup = document.getElementById('filter-popup');
-
-function hideflpopup() {
-    filterpopup.style.display = 'none';
+    document.getElementById('filter-section').style.display = 'none';
 }
 
 function showflpopup() {
-    hideflpopup();
-    hidefilters();
-    filterpopup.style.display = 'flex';
-
     const checkboxes = document.querySelectorAll('#filter-section input[name="filter"]:checked');
     const selectedFilters = Array.from(checkboxes).map(cb => cb.value);
+    if (!selectedFilters.length) return alert("Select at least one filter");
 
-    // Make an API call to fetch filtered data
-    fetchFilteredData(selectedFilters);
-}
-
-function fetchFilteredData(filters) {
-    fetch('http://4.240.91.131:3030/api/filter', {
+    fetch(`${BASE_URL}/api/filter`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ filters })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filters: selectedFilters })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        displayResults(data);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+        .then(res => res.json())
+        .then(data => {
+            displayResults(data);
+            const popup = document.getElementById('filter-popup');
+            if (popup) popup.style.display = 'flex';
+        })
+        .catch(err => console.error(err));
 }
 
-// Function to display the filtered results
+function hideflpopup() {
+    const popup = document.getElementById('filter-popup');
+    if (popup) popup.style.display = 'none';
+}
+
 function displayResults(data) {
     const resultsArea = document.getElementById('results-area');
     resultsArea.innerHTML = '';
-
-    if (Array.isArray(data) && data.length === 0) {
+    if (!data.length) {
         resultsArea.innerHTML = '<p>No results found</p>';
-    } else {
-        data.forEach(plant => {
-            const cardholder = document.createElement('div');
-            
-            cardholder.innerHTML = `
-                <div onclick="hideflpopup(), handleCardClick('${plant.scientific_name}')"  class="f-card">
-                    <h4 id="plant-id">${plant.plant_id}</h4>
-                    <h4 id="plant-name">${plant.scientific_name}</h4>
-                </div>
-            `;
-
-            resultsArea.appendChild(cardholder);
-        });
+        document.getElementById('no-of-results').textContent = 0;
+        return;
     }
-
-    document.getElementById('no-of-results').textContent = (Array.isArray(data) ? data.length : 0);
+    data.forEach(plant => {
+        const card = document.createElement('div');
+        card.className = 'f-card';
+        card.innerHTML = `<h4>${plant.plant_id}</h4><h4>${plant.scientific_name}</h4>`;
+        card.onclick = () => {
+            hidefilters();
+            hideflpopup();
+            if (window.showPlantFromFilter) {
+                window.showPlantFromFilter(plant);
+            } else {
+                window.handleCardClick(plant.scientific_name);
+            }
+        };
+        resultsArea.appendChild(card);
+    });
+    document.getElementById('no-of-results').textContent = data.length;
 }
+
+window.showfilters = showfilters;
+window.hidefilters = hidefilters;
+window.showflpopup = showflpopup;
+window.hideflpopup = hideflpopup;
+
+function showdiscription() {
+    const el = document.getElementById('discription-card');
+    if (!el) return;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hidediscription() {
+    const el = document.getElementById('discription-card');
+    if (!el) return;
+    el.style.display = 'none';
+}
+
+window.showdiscription = showdiscription;
+window.hidediscription = hidediscription;

@@ -18,7 +18,7 @@
 </head>
 
 <body>
-    <audio src="parallex/back-sound.mp3" autoplay></audio>
+    <audio id="bg-audio" src="parallex/back-sound.mp3" loop preload="auto"></audio>
 
     <section id="home" class="parallex">
         <h1 id="main-text">Verdure</h1>
@@ -141,6 +141,27 @@
     <script src="js/scrollEffect.js"></script>
 
     <script src="js/discription.js"></script>
+    <script>
+        // Start background audio on first user interaction (autoplay is blocked on many browsers)
+        (function () {
+            const a = document.getElementById('bg-audio');
+            if (!a) return;
+            a.volume = 0.45;
+            const start = async () => {
+                try {
+                    await a.play();
+                } catch (e) {
+                    // play may fail if browser still blocks it; ignore
+                }
+                window.removeEventListener('pointerdown', start);
+                window.removeEventListener('touchstart', start);
+                window.removeEventListener('keydown', start);
+            };
+            window.addEventListener('pointerdown', start, { once: true });
+            window.addEventListener('touchstart', start, { once: true });
+            window.addEventListener('keydown', start, { once: true });
+        })();
+    </script>
 </body>
 
 
