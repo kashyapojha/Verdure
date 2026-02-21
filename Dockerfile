@@ -7,11 +7,14 @@ RUN apk add --no-cache python3 make g++
 # Set working directory
 WORKDIR /app
 
-# Copy only package files first (better caching)
+# Copy package files first (better caching)
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
+
+# Copy .env file too
+COPY .env ./
 
 # Copy the rest of the app
 COPY . .
