@@ -23,4 +23,4 @@ COPY . .
 EXPOSE 3030
 
 # Start the server
-CMD ["node", "server.js"]
+CMD ["./wait-for-it.sh", "db:3306", "--", "node", "server.js"]
