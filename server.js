@@ -4,7 +4,7 @@ const mysql = require('mysql2');
 
 let connection;
 
-function connectWithRetry() {
+function connectWithRetry(callback) {
     connection = mysql.createConnection({
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
@@ -15,9 +15,10 @@ function connectWithRetry() {
     connection.connect(err => {
         if (err) {
             console.log("❌ MySQL not ready. Retrying in 5 seconds...");
-            setTimeout(connectWithRetry, 5000);
+            setTimeout(() => connectWithRetry(callback), 5000);
         } else {
             console.log("✅ Connected to MySQL database");
+            if (callback) callback();
         }
     });
 }
@@ -175,9 +176,11 @@ app.post('/api/filter', (req, res) => {
 // -----------------------------
 // START SERVER
 // -----------------------------
-app.listen(port, () =>
-    console.log(`🚀 Server running at http://localhost:${port}`)
-);
+connectWithRetry(() => {
+    app.listen(port, () =>
+        console.log(`🚀 Server running at http://localhost:${port}`)
+    );
+});
 
 
 
@@ -205,9 +208,8 @@ app.listen(port, () =>
 
 
 
-
-
-/*const express = require('express');
+/*
+const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const mysql = require('mysql2');
