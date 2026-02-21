@@ -1,26 +1,17 @@
 require('dotenv').config();
 
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const mysql = require('mysql2');
-const cors = require('cors');
 
-const app = express();
-const port = process.env.PORT || 3030;
+let connection;
 
-// -----------------------------
-// DATABASE CONNECTION (Docker Ready)
-// -----------------------------
-const connection = mysql.createConnection({
-    host: process.env.DB_HOST || "db",      // db (from docker)
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
-
-// Retry logic so backend waits for MySQL
 function connectWithRetry() {
+    connection = mysql.createConnection({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
+    });
+
     connection.connect(err => {
         if (err) {
             console.log("❌ MySQL not ready. Retrying in 5 seconds...");
@@ -32,7 +23,6 @@ function connectWithRetry() {
 }
 
 connectWithRetry();
-
 // -----------------------------
 // MIDDLEWARE
 // -----------------------------
