@@ -13,7 +13,7 @@ const port = process.env.PORT || 3030;
 // DATABASE CONNECTION (Docker Ready)
 // -----------------------------
 const connection = mysql.createConnection({
-    host: process.env.DB_HOST,      // db (from docker)
+    host: process.env.DB_HOST || "db",      // db (from docker)
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
