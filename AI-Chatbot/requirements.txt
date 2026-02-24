@@ -8,3 +8,8 @@ numpy
 fastapi
 uvicorn[standard]
 pydantic
+flask_cors
+
+mysql-connector-python
+accelerate
+python-dotenv

@@ -1,31 +1,52 @@
+import os
+import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from transformers import BertTokenizer, BertForSequenceClassification
 import torch
 import pickle
 import mysql.connector
+from dotenv import load_dotenv
+
+# --- LOGGING CONFIGURATION ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
+
+# --- ENV CONFIGURATION ---
+basedir = os.path.abspath(os.path.dirname(__file__))
+env_path = os.path.join(basedir, "..", ".env")
+load_dotenv(env_path)
+logger.info(f"Loading .env from: {env_path}")
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
 # Device setup
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+logger.info(f"Using device: {device}")
 
 # Load BERT chatbot model
-model = BertForSequenceClassification.from_pretrained("bert_model")
-model.to(device)
-model.eval()
-
-# Load tokenizer
-tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
-
-# Load label encoder
-with open("label_encoder.pkl", "rb") as f:
-    label_encoder = pickle.load(f)
+try:
+    logger.info("Loading BERT model and tokenizer...")
+    model = BertForSequenceClassification.from_pretrained("bert_model")
+    model.to(device)
+    model.eval()
+    tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
+    
+    with open("label_encoder.pkl", "rb") as f:
+        label_encoder = pickle.load(f)
+    logger.info("Model, Tokenizer, and Label Encoder loaded successfully.")
+except Exception as e:
+    logger.error(f"Failed to load model components: {e}")
 
 # Predict plant ID from user query
 def predict(query):
     try:
+        logger.info(f"Predicting for query: '{query}'")
         encoding = tokenizer(
             query,
             add_special_tokens=True,
@@ -44,59 +65,69 @@ def predict(query):
 
         predicted_id = prediction.item()
         original_label = label_encoder.inverse_transform([predicted_id])[0]
-        return original_label
+        
+        logger.info(f"Prediction successful: ID={predicted_id}, Label={original_label}")
+        return {"numeric_id": predicted_id, "label": original_label}
     except Exception as e:
-        print("Prediction error:", e)
+        logger.error(f"Prediction error: {e}")
         return None
 
 # Fetch plant data from MySQL
 def get_plant_data(plant_id):
     try:
+        logger.info(f"Connecting to DB to fetch data for: {plant_id}")
         conn = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="nbh05@",   # Update with your MySQL password
-            database="project"
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME")
         )
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM plants WHERE plant_id = %s", (plant_id,))
+        cursor.execute("SELECT * FROM plant WHERE plant_id = %s", (plant_id,))
         plant_data = cursor.fetchone()
         cursor.close()
         conn.close()
+        
+        if plant_data:
+            logger.info("Plant data retrieved successfully.")
+        else:
+            logger.warning(f"No plant data found in DB for ID: {plant_id}")
         return plant_data
     except Exception as e:
-        print("Database connection error:", e)
+        logger.error(f"Database connection error: {e}")
         return None
 
 # Chatbot route
 @app.route("/chat", methods=["POST"])
 def chat():
+    client_ip = request.remote_addr
     try:
         data = request.get_json()
         user_query = data.get("message", "").strip()
+        logger.info(f"[POST /chat] Request from {client_ip} | Message: '{user_query}'")
 
         if not user_query:
+            logger.warning(f"Empty message received from {client_ip}")
             return jsonify({"error": "No message provided"}), 400
 
-        # Get predicted plant ID
-        predicted_id = predict(user_query)
-        if not predicted_id:
+        prediction_result = predict(user_query)
+        if not prediction_result:
+            logger.error(f"Prediction failed for query: {user_query}")
             return jsonify({"response": "Sorry, I could not understand your query."})
 
-        # Fetch plant info
-        plant_info = get_plant_data(predicted_id)
-        if not plant_info:
-            return jsonify({"response": "Sorry, plant data not found."})
-
-        return jsonify({"response": plant_info})
+        return jsonify({
+            "numeric_id": prediction_result["numeric_id"],
+            "label": prediction_result["label"]
+        })
     except Exception as e:
-        print("Chat error:", e)
+        logger.error(f"Chat error: {e}")
         return jsonify({"response": "An error occurred while processing your request."}), 500
 
-# Health check
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "OK"}), 200
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.getenv("PREDICTOR_PORT", 5000))
+    logger.info(f"Starting Flask server on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=True)

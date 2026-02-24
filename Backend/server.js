@@ -186,23 +186,30 @@ connectWithRetry(() => {
 
 
 
-
-
+const path = require('path'); // Move this to the top
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
-const path = require('path');
 const fs = require('fs');
 const mysql = require('mysql2');
 const { execFile } = require('child_process');
 const cors = require('cors');
 const app = express();
-const port = 3030;
+const port = process.env.PORT || 3030;
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../Frontend')));
+
+// For all other routes, serve index.html (for single-page apps)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../Frontend/index.html'));
+});
 
 // Database connection
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'nbh05@', // your MySQL password
-    database: 'project'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 });
 
 connection.connect(err => {
@@ -515,8 +522,7 @@ app.post('/predict', async (req, res) => {
     if (!message) return res.status(400).json({ error: 'No message provided' });
 
     try {
-        // call the FastAPI model server
-        const pyResp = await fetch('http://127.0.0.1:3011/predict', {
+        const pyResp = await fetch(process.env.PREDICTOR_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
@@ -632,4 +638,4 @@ app.post('/predict', async (req, res) => {
     }
 });
 
-app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+app.listen(port, () => console.log(`Server running at http://0.0.0.0:${port}`));

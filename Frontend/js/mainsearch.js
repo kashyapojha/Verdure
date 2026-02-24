@@ -1,4 +1,5 @@
-const BASE_URL = 'http://localhost:3030';
+// const BASE_URL = 'http://localhost:3030';
+const BASE_URL = window.APP_CONFIG.BASE_URL;
 
 // Elements
 const sciname = document.getElementById('sci-plant-name');
