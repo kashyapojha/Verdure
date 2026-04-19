@@ -1,191 +1,3 @@
-// require('dotenv').config();
-/*const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const mysql = require('mysql2');
-
-const app = express();
-const port = process.env.PORT || 3030;
-
-let connection;
-
-function connectWithRetry(callback) {
-    connection = mysql.createConnection({
-        host: "verdure-db", // ensure this is 'db'
-        user: 'root',
-        password: 'nbh05@', // your MySQL password
-        database: 'project',
-        port: 3306    
-    });
-
-    connection.connect(err => {
-        if (err) {
-            console.log("❌ MySQL not ready. Retrying in 5 seconds...");
-            setTimeout(() => connectWithRetry(callback), 5000);
-        } else {
-            console.log("✅ Connected to MySQL database");
-            if (callback) callback();
-        }
-    });
-}
-
-// connect to MySQL first, then start server
-connectWithRetry(() => {
-
-    // -----------------------------
-    // MIDDLEWARE
-    // -----------------------------
-    app.use(express.json());
-    app.use(cors({ origin: '*', credentials: true }));
-    app.use(express.static(path.join(__dirname, 'public')));
-
-    app.use((req, res, next) => {
-        if (req.path && req.path.startsWith('/assets1/')) {
-            const ip = req.ip || 'unknown';
-            console.log(`[ASSET REQUEST] ${req.method} ${req.originalUrl} from ${ip}`);
-            res.on('finish', () => {
-                console.log(`[ASSET RESPONSE] ${req.method} ${req.originalUrl} -> ${res.statusCode}`);
-            });
-        }
-        next();
-    });
-
-    app.use('/assets1', express.static(path.join(__dirname, 'public', 'assets1')));
-
-    // -----------------------------
-    // SEARCH ROUTE
-    // -----------------------------
-    app.get('/search', (req, res) => {
-        const searchTerm = req.query.term ? req.query.term.toLowerCase() : '';
-        const term = `%${searchTerm}%`;
-
-        const query = `
-            SELECT p.plant_id, p.scientific_name, p.description, p.type_id, f.type_name,
-                   cn.common_name, r.region_name
-            FROM plant p
-            LEFT JOIN common_names cn ON p.plant_id = cn.plant_id
-            LEFT JOIN regions r ON p.plant_id = r.plant_id
-            LEFT JOIN types f ON p.type_id = f.type_id
-            WHERE LOWER(p.scientific_name) LIKE ?
-               OR LOWER(cn.common_name) LIKE ?
-        `;
-
-        connection.query(query, [term, term], (err, results) => {
-            if (err) return res.status(500).json({ message: "Database query failed" });
-
-            if (!results.length) return res.json({ message: "Plant not found" });
-
-            const plantsMap = {};
-
-            results.forEach(row => {
-                if (!plantsMap[row.plant_id]) {
-                    const plantId = row.plant_id.toLowerCase();
-                    const modelFileName = `${plantId}.gltf`;
-                    const modelFolder = path.join(__dirname, 'public', 'assets1', plantId);
-                    const modelFullPath = path.join(modelFolder, modelFileName);
-
-                    let assetFiles = [];
-                    let previewImage = null;
-
-                    if (fs.existsSync(modelFolder)) {
-                        assetFiles = fs.readdirSync(modelFolder);
-                        const imgs = assetFiles.filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f));
-                        if (imgs.length) previewImage = imgs[0];
-                    }
-
-                    plantsMap[row.plant_id] = {
-                        plant_id: row.plant_id,
-                        scientific_name: row.scientific_name,
-                        description: row.description,
-                        type_id: row.type_id,
-                        type_name: row.type_name,
-                        common_names: row.common_name ? [row.common_name] : [],
-                        regions: row.region_name ? [row.region_name] : [],
-                        model_path: `/assets1/${plantId}/${modelFileName}`,
-                        model_exists: fs.existsSync(modelFullPath),
-                        preview_image: previewImage ? `/assets1/${plantId}/${previewImage}` : null
-                    };
-                } else {
-                    if (row.common_name && !plantsMap[row.plant_id].common_names.includes(row.common_name)) {
-                        plantsMap[row.plant_id].common_names.push(row.common_name);
-                    }
-                    if (row.region_name && !plantsMap[row.plant_id].regions.includes(row.region_name)) {
-                        plantsMap[row.plant_id].regions.push(row.region_name);
-                    }
-                }
-            });
-
-            res.json(Object.values(plantsMap));
-        });
-    });
-
-    // -----------------------------
-    // FILTER ROUTE
-    // -----------------------------
-    app.post('/api/filter', (req, res) => {
-        const filters = req.body.filters || [];
-        if (!filters.length) return res.json([]);
-
-        const filterMap = {
-            digestive: 'Digestive health',
-            immunity: 'Immunity',
-            skin: 'Skin care',
-            hair: 'Hair care',
-            eye: 'Eye health',
-            respiratory: 'Respiratory health',
-            heart: 'Heart health',
-            reproductive: 'Reproductive health',
-            other: 'Other medicinal uses'
-        };
-
-        const benefitTypes = filters.map(f => filterMap[f]).filter(Boolean);
-        if (!benefitTypes.length) return res.json([]);
-
-        const placeholders = benefitTypes.map(() => '?').join(',');
-
-        const query = `
-            SELECT p.plant_id, p.scientific_name, p.description, p.type_id, f.type_name
-            FROM plant p
-            JOIN health_benefits hb ON p.plant_id = hb.plant_id
-            LEFT JOIN types f ON p.type_id = f.type_id
-            WHERE hb.benefit_value = 1
-              AND hb.benefit_type IN (${placeholders})
-        `;
-
-        connection.query(query, benefitTypes, (err, results) => {
-            if (err) return res.status(500).json({ message: "Database query failed" });
-            res.json(results);
-        });
-    });
-
-    // -----------------------------
-    // START SERVER
-    // -----------------------------
-    app.listen(port, () => console.log(`🚀 Server running at http://localhost:${port}`));
-
-});
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const path = require('path'); // Move this to the top
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
@@ -196,13 +8,15 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3030;
 
-// Serve frontend static files
-app.use(express.static(path.join(__dirname, '../Frontend')));
+// CORS first so static files also carry Access-Control-Allow-Origin
+app.use(cors({ origin: '*', credentials: true }));
+app.use(express.json());
 
-// For all other routes, serve index.html (for single-page apps)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../Frontend/index.html'));
-});
+// Serve frontend static files and model assets (Assets are under /assets1)
+app.use(express.static(path.join(__dirname, '../Frontend')));
+app.use('/assets1', express.static(path.join(__dirname, 'public', 'assets1')));
+app.use('/assets1', express.static(path.join(__dirname, '..', 'Frontend', 'assets1')));
+app.use('/imgs', express.static(path.join(__dirname, '..', 'Frontend', 'imgs')));
 
 // Database connection
 const connection = mysql.createConnection({
@@ -217,10 +31,6 @@ connection.connect(err => {
     console.log('Connected to database');
 });
 
-// Middleware
-app.use(express.json());
-app.use(cors({ origin: '*', credentials: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 // Log requests to assets1 so we can trace frontend fetches
 app.use((req, res, next) => {
     if (req.path && req.path.startsWith('/assets1/')) {
@@ -232,13 +42,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-
-// Serve model assets from public/assets1
-// Serve model assets from Backend public first, then Frontend assets as fallback
-app.use('/assets1', express.static(path.join(__dirname, 'public', 'assets1')));
-app.use('/assets1', express.static(path.join(__dirname, '..', 'Frontend', 'assets1')));
-// Serve frontend images (provided under Frontend/imgs)
-app.use('/imgs', express.static(path.join(__dirname, '..', 'Frontend', 'imgs')));
 
 // ------------------------
 // SEARCH route
@@ -636,6 +439,11 @@ app.post('/predict', async (req, res) => {
         console.error('Predict route error:', e);
         return res.status(500).json({ error: 'Predict route failed' });
     }
+});
+
+// SPA catch-all: send index for frontend routes (after API paths)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../Frontend/index.html'));
 });
 
 app.listen(port, () => console.log(`Server running at http://0.0.0.0:${port}`));
