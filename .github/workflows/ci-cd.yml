@@ -93,10 +93,10 @@ jobs:
       # ---------------------------------
       # Build Frontend
       # ---------------------------------
-      - name: Build Frontend
-        run: |
-          cd Frontend
-          npm run build
+      - name: Install Frontend Dependencies 
+        run: | 
+          cd Frontend 
+          npm ci
 
       # ---------------------------------
       # Verify Backend
