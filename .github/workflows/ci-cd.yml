@@ -128,6 +128,10 @@ jobs:
     
     environment: docker
 
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -142,13 +146,11 @@ jobs:
       # Login to Docker Hub
       # ---------------------------------
       - name: Login to Docker Hub
-        if: |
-          secrets.DOCKERHUB_USERNAME != '' &&
-          secrets.DOCKERHUB_TOKEN != ''
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       # ---------------------------------
       # Build Docker Images
@@ -160,38 +162,32 @@ jobs:
       # Tag Docker Images
       # ---------------------------------
       - name: Tag Docker Images
-        if: |
-          secrets.DOCKERHUB_USERNAME != '' &&
-          secrets.DOCKERHUB_TOKEN != ''
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         run: |
           docker tag verdure-frontend \
-          ${{ secrets.DOCKERHUB_USERNAME }}/verdure-frontend:latest
+          ${{ env.DOCKERHUB_USERNAME }}/verdure-frontend:latest
 
           docker tag verdure-backend \
-          ${{ secrets.DOCKERHUB_USERNAME }}/verdure-backend:latest
+          ${{ env.DOCKERHUB_USERNAME }}/verdure-backend:latest
 
           docker tag verdure-ai-chatbot \
-          ${{ secrets.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
+          ${{ env.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
 
       # ---------------------------------
       # Push Docker Images
       # ---------------------------------
       - name: Push Docker Images
-        if: |
-          secrets.DOCKERHUB_USERNAME != '' &&
-          secrets.DOCKERHUB_TOKEN != ''
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-frontend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-backend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
+          docker push ${{ env.DOCKERHUB_USERNAME }}/verdure-frontend:latest
+          docker push ${{ env.DOCKERHUB_USERNAME }}/verdure-backend:latest
+          docker push ${{ env.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
 
       # ---------------------------------
       # Warning if Secrets Missing
       # ---------------------------------
       - name: Docker Hub Secrets Not Configured
-        if: |
-          secrets.DOCKERHUB_USERNAME == '' ||
-          secrets.DOCKERHUB_TOKEN == ''
+        if: env.DOCKERHUB_USERNAME == '' || env.DOCKERHUB_TOKEN == ''
         run: |
           echo "⚠️  Docker Hub secrets are not configured!"
           echo "Please add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to your repository secrets."
