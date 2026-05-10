@@ -1,0 +1,70 @@
+services:
+  db:
+    build:
+      context: ./DB
+      dockerfile: Dockerfile
+    container_name: verdure-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-nbh05@}
+      MYSQL_DATABASE: ${DB_NAME:-project}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: verdure-backend
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-nbh05@}
+      DB_NAME: ${DB_NAME:-project}
+    ports:
+      - "3030:3030"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ai_chatbot:
+    build:
+      context: ./AI-Chatbot
+      dockerfile: Dockerfile
+    container_name: verdure-ai-chatbot
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-nbh05@}
+      DB_NAME: ${DB_NAME:-project}
+      PREDICTOR_PORT: 5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: verdure-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:

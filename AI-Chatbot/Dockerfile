@@ -1,11 +1,18 @@
-FROM mysql:8.0
+FROM python:3.11-slim
 
-# Set environment variables
-ENV MYSQL_ROOT_PASSWORD="nbh05@"
-ENV MYSQL_DATABASE="project"
+WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 
-# Copy the backup file into the auto-init directory
-# MySQL will automatically run this into the MYSQL_DATABASE
-COPY verdure_backup_utf8.sql /docker-entrypoint-initdb.d/
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 3306
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+CMD ["python", "app.py"]
+
