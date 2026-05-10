@@ -122,8 +122,11 @@ jobs:
     needs: build-and-test
 
     if: |
-      github.ref == 'refs/heads/main' ||
-      github.ref == 'refs/heads/develop'
+      (github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/develop') &&
+      github.event_name != 'pull_request'
+    
+    environment: docker
 
     steps:
       - name: Checkout code
@@ -139,10 +142,13 @@ jobs:
       # Login to Docker Hub
       # ---------------------------------
       - name: Login to Docker Hub
+        if: |
+          secrets.DOCKERHUB_USERNAME != '' &&
+          secrets.DOCKERHUB_TOKEN != ''
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # ---------------------------------
       # Build Docker Images
@@ -154,6 +160,9 @@ jobs:
       # Tag Docker Images
       # ---------------------------------
       - name: Tag Docker Images
+        if: |
+          secrets.DOCKERHUB_USERNAME != '' &&
+          secrets.DOCKERHUB_TOKEN != ''
         run: |
           docker tag verdure-frontend \
           ${{ secrets.DOCKERHUB_USERNAME }}/verdure-frontend:latest
@@ -168,10 +177,26 @@ jobs:
       # Push Docker Images
       # ---------------------------------
       - name: Push Docker Images
+        if: |
+          secrets.DOCKERHUB_USERNAME != '' &&
+          secrets.DOCKERHUB_TOKEN != ''
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-frontend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-backend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
+
+      # ---------------------------------
+      # Warning if Secrets Missing
+      # ---------------------------------
+      - name: Docker Hub Secrets Not Configured
+        if: |
+          secrets.DOCKERHUB_USERNAME == '' ||
+          secrets.DOCKERHUB_TOKEN == ''
+        run: |
+          echo "⚠️  Docker Hub secrets are not configured!"
+          echo "Please add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to your repository secrets."
+          echo "Go to: Settings → Secrets and variables → Actions"
+
 
       # ---------------------------------
       # Logout from Docker Hub
