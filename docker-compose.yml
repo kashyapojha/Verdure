@@ -1,5 +1,6 @@
 services:
   db:
+    image: verdure-db
     build:
       context: ./DB
       dockerfile: Dockerfile
@@ -19,6 +20,7 @@ services:
     restart: unless-stopped
 
   backend:
+    image: verdure-backend
     build:
       context: ./Backend
       dockerfile: Dockerfile
@@ -37,6 +39,7 @@ services:
     restart: unless-stopped
 
   ai_chatbot:
+    image: verdure-ai-chatbot
     build:
       context: ./AI-Chatbot
       dockerfile: Dockerfile
@@ -56,6 +59,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: verdure-frontend
     build:
       context: ./Frontend
       dockerfile: Dockerfile
