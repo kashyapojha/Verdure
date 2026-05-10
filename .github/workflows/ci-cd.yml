@@ -192,13 +192,3 @@ jobs:
           echo "⚠️  Docker Hub secrets are not configured!"
           echo "Please add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to your repository secrets."
           echo "Go to: Settings → Secrets and variables → Actions"
-
-
-      # ---------------------------------
-      # Logout from Docker Hub
-      # ---------------------------------
-      - name: Logout from Docker Hub
-        if: always()
-        uses: docker/login-action@v3
-        with:
-          logout: true
