@@ -164,6 +164,9 @@ jobs:
       - name: Tag Docker Images
         if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         run: |
+          docker tag verdure-db \
+          ${{ env.DOCKERHUB_USERNAME }}/verdure-db:latest
+
           docker tag verdure-frontend \
           ${{ env.DOCKERHUB_USERNAME }}/verdure-frontend:latest
 
@@ -179,6 +182,7 @@ jobs:
       - name: Push Docker Images
         if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         run: |
+          docker push ${{ env.DOCKERHUB_USERNAME }}/verdure-db:latest
           docker push ${{ env.DOCKERHUB_USERNAME }}/verdure-frontend:latest
           docker push ${{ env.DOCKERHUB_USERNAME }}/verdure-backend:latest
           docker push ${{ env.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
