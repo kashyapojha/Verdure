@@ -89,13 +89,23 @@ jobs:
         run: |
           timeout 60 bash -c 'until mysql -h localhost -u root -ptestpassword -e "SELECT 1"; do sleep 2; done'
 
-      - name: Run backend tests (if available)
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install AI-Chatbot dependencies
         run: |
-          cd Backend
-          if [ -f "test" ] || [ -d "test" ] || grep -q "test" package.json; then
-            npm test
+          cd AI-Chatbot
+          pip install -r requirements.txt
+
+      - name: Run AI-Chatbot tests (if available)
+        run: |
+          cd AI-Chatbot
+          if [ -f "test_model.py" ]; then
+            python test_model.py
           else
-            echo "No tests found, skipping test step"
+            echo "No AI-Chatbot tests found, skipping"
           fi
 
       - name: Build application
@@ -124,27 +134,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build and push Docker images
+        run: |
+          # Build all services
+          docker compose build
+          
+          # Tag images for registry
+          docker tag verdure-db ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-db:latest
+          docker tag verdure-backend ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+          docker tag verdure-ai-chatbot ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-ai-chatbot:latest
+          docker tag verdure-frontend ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+          
+          # Push images
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-db:latest
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-ai-chatbot:latest
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
 
   # Deploy to Production
   deploy-production:
@@ -169,20 +174,17 @@ jobs:
             # Pull latest code
             git pull origin main
             
-            # Stop existing container
-            docker stop verdure-app || true
-            docker rm verdure-app || true
+            # Pull new images
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-db:latest
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-ai-chatbot:latest
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
             
-            # Pull new image
-            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            # Stop and remove existing containers
+            docker compose down || true
             
-            # Run new container
-            docker run -d \
-              --name verdure-app \
-              --restart unless-stopped \
-              -p 3030:3030 \
-              --env-file .env \
-              ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            # Start services (will use pulled images since compose has build, but images exist)
+            docker compose up -d --no-build
             
             # Clean up old images
             docker image prune -f
@@ -212,20 +214,17 @@ jobs:
             # Pull latest code
             git pull origin develop
             
-            # Stop existing container
-            docker stop verdure-staging-app || true
-            docker rm verdure-staging-app || true
+            # Pull new images
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-db:latest
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-ai-chatbot:latest
+            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
             
-            # Pull new image
-            docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:develop
+            # Stop and remove existing containers
+            docker compose down || true
             
-            # Run new container
-            docker run -d \
-              --name verdure-staging-app \
-              --restart unless-stopped \
-              -p 3031:3030 \
-              --env-file .env.staging \
-              ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:develop
+            # Start services
+            docker compose up -d --no-build
             
             # Clean up old images
             docker image prune -f
@@ -246,13 +245,17 @@ jobs:
         if: needs.deploy-production.result == 'success'
         run: |
           echo "Checking production health..."
-          curl -f ${{ secrets.PROD_APP_URL }}/health || echo "Production health check failed"
+          curl -f ${{ secrets.PROD_BACKEND_URL }}/health || echo "Backend health check failed"
+          curl -f ${{ secrets.PROD_AI_URL }}/health || echo "AI health check failed"
+          curl -f ${{ secrets.PROD_FRONTEND_URL }} || echo "Frontend health check failed"
 
       - name: Check staging health
         if: needs.deploy-staging.result == 'success'
         run: |
           echo "Checking staging health..."
-          curl -f ${{ secrets.STAGING_APP_URL }}/health || echo "Staging health check failed"
+          curl -f ${{ secrets.STAGING_BACKEND_URL }}/health || echo "Backend health check failed"
+          curl -f ${{ secrets.STAGING_AI_URL }}/health || echo "AI health check failed"
+          curl -f ${{ secrets.STAGING_FRONTEND_URL }} || echo "Frontend health check failed"
 
   # Notification
   notify:
