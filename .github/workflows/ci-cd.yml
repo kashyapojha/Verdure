@@ -18,8 +18,8 @@ permissions:
 
 env:
   NODE_VERSION: "20"
-  DOCKER_REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  DOCKER_REGISTRY: docker.io
+  DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
 jobs:
 
@@ -136,14 +136,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # ---------------------------------
-      # Login to GHCR
+      # Login to Docker Hub
       # ---------------------------------
-      - name: Login to GitHub Container Registry
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       # ---------------------------------
       # Build Docker Images
@@ -157,24 +157,19 @@ jobs:
       - name: Tag Docker Images
         run: |
           docker tag verdure-frontend \
-          ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/verdure-frontend:latest
 
           docker tag verdure-backend \
-          ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/verdure-backend:latest
 
-          docker tag verdure-chatbot \
-          ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-chatbot:latest
+          docker tag verdure-ai-chatbot \
+          ${{ secrets.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
 
       # ---------------------------------
       # Push Docker Images
       # ---------------------------------
       - name: Push Docker Images
         run: |
-          docker push \
-          ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
-
-          docker push \
-          ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
-
-          docker push \
-          ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-chatbot:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-frontend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
