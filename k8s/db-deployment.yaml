@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verdure-db
+  namespace: verdure
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: verdure-db
+  template:
+    metadata:
+      labels:
+        app: verdure-db
+    spec:
+      containers:
+        - name: mysql
+          image: verdure-db:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: verdure-db-secret
+                  key: mysql-root-password
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: verdure-config
+                  key: DB_NAME
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: verdure-db-pvc

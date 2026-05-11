@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verdure-frontend
+  namespace: verdure
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: verdure-frontend
+  template:
+    metadata:
+      labels:
+        app: verdure-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: verdure-frontend:latest
+          ports:
+            - containerPort: 80

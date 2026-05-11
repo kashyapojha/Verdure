@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verdure-backend
+  namespace: verdure
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: verdure-backend
+  template:
+    metadata:
+      labels:
+        app: verdure-backend
+    spec:
+      containers:
+        - name: backend
+          image: verdure-backend:latest
+          ports:
+            - containerPort: 3030
+          env:
+            - name: DB_HOST
+              value: verdure-db
+            - name: DB_USER
+              value: root
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: verdure-db-secret
+                  key: db-password
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: verdure-config
+                  key: DB_NAME
+            - name: PREDICTOR_URL
+              value: http://verdure-ai-chatbot:5000/chat
+            - name: PORT
+              value: "3030"
