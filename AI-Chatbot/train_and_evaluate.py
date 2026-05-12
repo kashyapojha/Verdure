@@ -73,8 +73,20 @@ def prepare_data(data, tokenizer, max_len, batch_size):
     label_encoder = LabelEncoder()
     data['label_id'] = label_encoder.fit_transform(data['id'])
 
+    label_counts = data['label_id'].value_counts()
+    if label_counts.min() < 2:
+        sparse_labels = label_counts[label_counts < 2].index.tolist()
+        print(
+            'Warning: Some classes have fewer than 2 samples and cannot be stratified.',
+            'Falling back to an unstratified train/test split.',
+            f'Classes with too few members: {sparse_labels}',
+        )
+        stratify = None
+    else:
+        stratify = data['label_id']
+
     train_data, test_data = train_test_split(
-        data, test_size=0.2, random_state=42, stratify=data['label_id']
+        data, test_size=0.2, random_state=42, stratify=stratify
     )
 
     train_dataset = QueryDataset(
