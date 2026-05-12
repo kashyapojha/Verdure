@@ -156,7 +156,7 @@ jobs:
             --min-accuracy 0.5
 
       - name: Upload trained model artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ai-chatbot-model
           path: |
@@ -182,7 +182,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download trained model artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ai-chatbot-model
           path: .
@@ -196,7 +196,7 @@ jobs:
           cp AI-Chatbot/metrics.json model_registry/ai-chatbot/metrics.json
 
       - name: Upload registered model artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ai-chatbot-model-registry
           path: model_registry/ai-chatbot
@@ -224,7 +224,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download registered model artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ai-chatbot-model-registry
           path: .
