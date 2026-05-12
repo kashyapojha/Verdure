@@ -128,9 +128,14 @@ jobs:
 
     environment: mlops
 
+    outputs:
+      run_mlops: ${{ steps.check.outputs.run_mlops }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -142,7 +147,25 @@ jobs:
           cd AI-Chatbot
           pip install -r requirements.txt
 
+      - name: Determine whether to run MLOps training
+        id: check
+        run: |
+          before="${{ github.event.before }}"
+          sha="${{ github.sha }}"
+          if [ "$before" = "0000000000000000000000000000000000000000" ] || [ -z "$before" ]; then
+            changed_files=$(git diff-tree --no-commit-id --name-only -r "$sha")
+          else
+            changed_files=$(git diff --name-only "$before" "$sha")
+          fi
+          echo "Changed files: $changed_files"
+          should_run=false
+          if echo "$changed_files" | grep -Eq '^AI-Chatbot/final_data.csv$'; then
+            should_run=true
+          fi
+          echo "run_mlops=$should_run" >> "$GITHUB_OUTPUT"
+
       - name: Train and Evaluate AI Chatbot
+        if: steps.check.outputs.run_mlops == 'true'
         run: |
           cd AI-Chatbot
           python train_and_evaluate.py \
@@ -156,6 +179,7 @@ jobs:
             --min-accuracy 0.5
 
       - name: Upload trained model artifacts
+        if: steps.check.outputs.run_mlops == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ai-chatbot-model
@@ -164,6 +188,11 @@ jobs:
             AI-Chatbot/bert_tokenizer
             AI-Chatbot/label_encoder.pkl
             AI-Chatbot/metrics.json
+
+      - name: Skip MLOps training
+        if: steps.check.outputs.run_mlops != 'true'
+        run: |
+          echo "No relevant AI-Chatbot data changes detected. Skipping MLOps training."
 
   # =====================================
   # Model Registry
@@ -182,12 +211,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download trained model artifacts
+        if: needs.mlops-train.outputs.run_mlops == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ai-chatbot-model
           path: .
 
       - name: Register AI Chatbot model artifacts
+        if: needs.mlops-train.outputs.run_mlops == 'true'
         run: |
           mkdir -p model_registry/ai-chatbot
           cp -r AI-Chatbot/bert_model model_registry/ai-chatbot/bert_model
@@ -196,10 +227,16 @@ jobs:
           cp AI-Chatbot/metrics.json model_registry/ai-chatbot/metrics.json
 
       - name: Upload registered model artifact
+        if: needs.mlops-train.outputs.run_mlops == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ai-chatbot-model-registry
           path: model_registry/ai-chatbot
+
+      - name: Skip model registry when no training triggered
+        if: needs.mlops-train.outputs.run_mlops != 'true'
+        run: |
+          echo "No new trained model artifacts to register."
 
   # =====================================
   # Docker Build and Push
