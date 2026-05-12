@@ -206,6 +206,9 @@ jobs:
       github.ref == 'refs/heads/develop') &&
       github.event_name != 'pull_request'
 
+    outputs:
+      artifact_uploaded: ${{ steps.artifact_flag.outputs.artifact_uploaded }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -232,6 +235,15 @@ jobs:
         with:
           name: ai-chatbot-model-registry
           path: model_registry/ai-chatbot
+
+      - name: Set model registry artifact output
+        id: artifact_flag
+        run: |
+          if [ "${{ needs.mlops-train.outputs.run_mlops }}" = "true" ]; then
+            echo "artifact_uploaded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "artifact_uploaded=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Skip model registry when no training triggered
         if: needs.mlops-train.outputs.run_mlops != 'true'
@@ -261,14 +273,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download registered model artifact
-        if: needs.mlops-train.outputs.run_mlops == 'true'
+        if: needs.model-registry.outputs.artifact_uploaded == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ai-chatbot-model-registry
           path: .
 
       - name: Place model artifacts into AI-Chatbot context
-        if: needs.mlops-train.outputs.run_mlops == 'true'
+        if: needs.model-registry.outputs.artifact_uploaded == 'true'
         run: |
           mkdir -p AI-Chatbot
           cp -r model_registry/ai-chatbot/bert_model AI-Chatbot/bert_model
@@ -276,7 +288,7 @@ jobs:
           cp model_registry/ai-chatbot/label_encoder.pkl AI-Chatbot/label_encoder.pkl
 
       - name: Skip model artifact refresh and use repo model assets
-        if: needs.mlops-train.outputs.run_mlops != 'true'
+        if: needs.model-registry.outputs.artifact_uploaded != 'true'
         run: |
           echo "No new model artifact produced; using AI-Chatbot model artifacts already present in the repo."
 
