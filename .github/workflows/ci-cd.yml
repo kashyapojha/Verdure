@@ -261,17 +261,24 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download registered model artifact
+        if: needs.mlops-train.outputs.run_mlops == 'true'
         uses: actions/download-artifact@v4
         with:
           name: ai-chatbot-model-registry
           path: .
 
       - name: Place model artifacts into AI-Chatbot context
+        if: needs.mlops-train.outputs.run_mlops == 'true'
         run: |
           mkdir -p AI-Chatbot
           cp -r model_registry/ai-chatbot/bert_model AI-Chatbot/bert_model
           cp -r model_registry/ai-chatbot/bert_tokenizer AI-Chatbot/bert_tokenizer
           cp model_registry/ai-chatbot/label_encoder.pkl AI-Chatbot/label_encoder.pkl
+
+      - name: Skip model artifact refresh and use repo model assets
+        if: needs.mlops-train.outputs.run_mlops != 'true'
+        run: |
+          echo "No new model artifact produced; using AI-Chatbot model artifacts already present in the repo."
 
       # ---------------------------------
       # Setup Docker Buildx
