@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: verdure-frontend:latest
+          image: karann24/verdure-frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80

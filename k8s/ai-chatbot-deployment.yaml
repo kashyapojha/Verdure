@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: ai-chatbot
-          image: verdure-ai-chatbot:latest
+          image: karann24/verdure-ai-chatbot:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
           env:

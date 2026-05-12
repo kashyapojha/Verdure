@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: mysql
-          image: verdure-db:latest
+          image: karann24/verdure-db:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3306
           env:

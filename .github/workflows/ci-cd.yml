@@ -115,11 +115,98 @@ jobs:
           echo "AI Chatbot build successful"
 
   # =====================================
+  # MLOps Training and Evaluation
+  # =====================================
+  mlops-train:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    if: |
+      (github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/develop') &&
+      github.event_name != 'pull_request'
+
+    environment: mlops
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install AI-Chatbot Dependencies
+        run: |
+          cd AI-Chatbot
+          pip install -r requirements.txt
+
+      - name: Train and Evaluate AI Chatbot
+        run: |
+          cd AI-Chatbot
+          python train_and_evaluate.py \
+            --data-path final_data.csv \
+            --model-dir bert_model \
+            --tokenizer-dir bert_tokenizer \
+            --label-encoder-path label_encoder.pkl \
+            --epochs 3 \
+            --batch-size 16 \
+            --max-len 128 \
+            --min-accuracy 0.5
+
+      - name: Upload trained model artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ai-chatbot-model
+          path: |
+            AI-Chatbot/bert_model
+            AI-Chatbot/bert_tokenizer
+            AI-Chatbot/label_encoder.pkl
+            AI-Chatbot/metrics.json
+
+  # =====================================
+  # Model Registry
+  # =====================================
+  model-registry:
+    runs-on: ubuntu-latest
+    needs: mlops-train
+
+    if: |
+      (github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/develop') &&
+      github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download trained model artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ai-chatbot-model
+          path: .
+
+      - name: Register AI Chatbot model artifacts
+        run: |
+          mkdir -p model_registry/ai-chatbot
+          cp -r AI-Chatbot/bert_model model_registry/ai-chatbot/bert_model
+          cp -r AI-Chatbot/bert_tokenizer model_registry/ai-chatbot/bert_tokenizer
+          cp AI-Chatbot/label_encoder.pkl model_registry/ai-chatbot/label_encoder.pkl
+          cp AI-Chatbot/metrics.json model_registry/ai-chatbot/metrics.json
+
+      - name: Upload registered model artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ai-chatbot-model-registry
+          path: model_registry/ai-chatbot
+
+  # =====================================
   # Docker Build and Push
   # =====================================
   docker-build:
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [build-and-test, model-registry]
 
     if: |
       (github.ref == 'refs/heads/main' ||
@@ -135,6 +222,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download registered model artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ai-chatbot-model-registry
+          path: .
+
+      - name: Place model artifacts into AI-Chatbot context
+        run: |
+          mkdir -p AI-Chatbot
+          cp -r model_registry/ai-chatbot/bert_model AI-Chatbot/bert_model
+          cp -r model_registry/ai-chatbot/bert_tokenizer AI-Chatbot/bert_tokenizer
+          cp model_registry/ai-chatbot/label_encoder.pkl AI-Chatbot/label_encoder.pkl
 
       # ---------------------------------
       # Setup Docker Buildx
