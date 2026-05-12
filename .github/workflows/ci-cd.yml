@@ -195,67 +195,11 @@ jobs:
           echo "No relevant AI-Chatbot data changes detected. Skipping MLOps training."
 
   # =====================================
-  # Model Registry
-  # =====================================
-  model-registry:
-    runs-on: ubuntu-latest
-    needs: mlops-train
-
-    if: |
-      (github.ref == 'refs/heads/main' ||
-      github.ref == 'refs/heads/develop') &&
-      github.event_name != 'pull_request'
-
-    outputs:
-      artifact_uploaded: ${{ steps.artifact_flag.outputs.artifact_uploaded }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download trained model artifacts
-        if: needs.mlops-train.outputs.run_mlops == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: ai-chatbot-model
-          path: .
-
-      - name: Register AI Chatbot model artifacts
-        if: needs.mlops-train.outputs.run_mlops == 'true'
-        run: |
-          mkdir -p model_registry/ai-chatbot
-          cp -r AI-Chatbot/bert_model model_registry/ai-chatbot/bert_model
-          cp -r AI-Chatbot/bert_tokenizer model_registry/ai-chatbot/bert_tokenizer
-          cp AI-Chatbot/label_encoder.pkl model_registry/ai-chatbot/label_encoder.pkl
-          cp AI-Chatbot/metrics.json model_registry/ai-chatbot/metrics.json
-
-      - name: Upload registered model artifact
-        if: needs.mlops-train.outputs.run_mlops == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-chatbot-model-registry
-          path: model_registry/ai-chatbot
-
-      - name: Set model registry artifact output
-        id: artifact_flag
-        run: |
-          if [ "${{ needs.mlops-train.outputs.run_mlops }}" = "true" ]; then
-            echo "artifact_uploaded=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "artifact_uploaded=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Skip model registry when no training triggered
-        if: needs.mlops-train.outputs.run_mlops != 'true'
-        run: |
-          echo "No new trained model artifacts to register."
-
-  # =====================================
   # Docker Build and Push
   # =====================================
   docker-build:
     runs-on: ubuntu-latest
-    needs: [build-and-test, model-registry]
+    needs: [build-and-test, mlops-train]
 
     if: |
       (github.ref == 'refs/heads/main' ||
@@ -272,23 +216,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download registered model artifact
-        if: needs.model-registry.outputs.artifact_uploaded == 'true'
+      - name: Download trained model artifact
+        if: needs.mlops-train.outputs.run_mlops == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: ai-chatbot-model-registry
+          name: ai-chatbot-model
           path: .
 
       - name: Place model artifacts into AI-Chatbot context
-        if: needs.model-registry.outputs.artifact_uploaded == 'true'
+        if: needs.mlops-train.outputs.run_mlops == 'true'
         run: |
           mkdir -p AI-Chatbot
-          cp -r model_registry/ai-chatbot/bert_model AI-Chatbot/bert_model
-          cp -r model_registry/ai-chatbot/bert_tokenizer AI-Chatbot/bert_tokenizer
-          cp model_registry/ai-chatbot/label_encoder.pkl AI-Chatbot/label_encoder.pkl
+          cp -r AI-Chatbot/bert_model AI-Chatbot/bert_model
+          cp -r AI-Chatbot/bert_tokenizer AI-Chatbot/bert_tokenizer
+          cp AI-Chatbot/label_encoder.pkl AI-Chatbot/label_encoder.pkl
 
       - name: Skip model artifact refresh and use repo model assets
-        if: needs.model-registry.outputs.artifact_uploaded != 'true'
+        if: needs.mlops-train.outputs.run_mlops != 'true'
         run: |
           echo "No new model artifact produced; using AI-Chatbot model artifacts already present in the repo."
 
