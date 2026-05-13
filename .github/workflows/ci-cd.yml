@@ -59,7 +59,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       # ---------------------------------
-      # Backend Dependencies
+      # Install Backend Dependencies
       # ---------------------------------
       - name: Install Backend Dependencies
         run: |
@@ -67,12 +67,21 @@ jobs:
           npm ci
 
       # ---------------------------------
-      # Frontend Dependencies
+      # Verify Backend Syntax
       # ---------------------------------
-      - name: Install Frontend Dependencies
+      - name: Verify Backend Syntax
         run: |
-          cd Frontend
-          npm ci
+          cd Backend
+          npm test
+
+      # ---------------------------------
+      # Validate Frontend Static Site
+      # ---------------------------------
+      - name: Validate Frontend Static Site
+        run: |
+          test -f Frontend/index.html
+          test -d Frontend/js
+          echo "Frontend static assets are present"
 
       # ---------------------------------
       # Setup Python
@@ -91,28 +100,30 @@ jobs:
           pip install -r requirements.txt
 
       # ---------------------------------
-      # Build Frontend
+      # Verify AI Chatbot Python Sources
       # ---------------------------------
-      - name: Install Frontend Dependencies 
-        run: | 
-          cd Frontend 
-          npm ci
+      - name: Verify AI Chatbot Python Sources
+        run: |
+          python -m py_compile AI-Chatbot/app.py AI-Chatbot/train_and_evaluate.py AI-Chatbot/test_model.py
 
       # ---------------------------------
-      # Verify Backend
+      # Validate Docker Compose
       # ---------------------------------
-      - name: Verify Backend
+      - name: Validate Docker Compose
         run: |
-          cd Backend
-          echo "Backend build successful"
+          docker compose -f docker-compose.yml config
 
       # ---------------------------------
-      # Verify AI Chatbot
+      # Validate Kubernetes Manifests
       # ---------------------------------
-      - name: Verify AI Chatbot
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: latest
+
+      - name: Validate Kubernetes manifests
         run: |
-          cd AI-Chatbot
-          echo "AI Chatbot build successful"
+          kubectl kustomize k8s/ > /dev/null
 
   # =====================================
   # MLOps Training and Evaluation
@@ -136,7 +147,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -223,18 +233,19 @@ jobs:
           name: ai-chatbot-model
           path: .
 
-      - name: Place model artifacts into AI-Chatbot context
+      - name: Verify downloaded AI-Chatbot model artifacts
         if: needs.mlops-train.outputs.run_mlops == 'true'
         run: |
-          mkdir -p AI-Chatbot
-          cp -r AI-Chatbot/bert_model AI-Chatbot/bert_model
-          cp -r AI-Chatbot/bert_tokenizer AI-Chatbot/bert_tokenizer
-          cp AI-Chatbot/label_encoder.pkl AI-Chatbot/label_encoder.pkl
+          echo "Downloaded AI-Chatbot artifacts:"
+          find AI-Chatbot -maxdepth 2 -type f | sort
 
-      - name: Skip model artifact refresh and use repo model assets
+      - name: Ensure repo AI-Chatbot model assets exist
         if: needs.mlops-train.outputs.run_mlops != 'true'
         run: |
-          echo "No new model artifact produced; using AI-Chatbot model artifacts already present in the repo."
+          test -d AI-Chatbot/bert_model
+          test -d AI-Chatbot/bert_tokenizer
+          test -f AI-Chatbot/label_encoder.pkl
+          echo "AI-Chatbot model assets are present in the repo."
 
       # ---------------------------------
       # Setup Docker Buildx
