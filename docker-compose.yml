@@ -25,7 +25,6 @@ services:
       context: ./Backend
       dockerfile: Dockerfile
     container_name: verdure-backend
-    env_file: .env
     environment:
       DB_HOST: db
       DB_USER: root
@@ -44,7 +43,6 @@ services:
       context: ./AI-Chatbot
       dockerfile: Dockerfile
     container_name: verdure-ai-chatbot
-    env_file: .env
     environment:
       DB_HOST: db
       DB_USER: root

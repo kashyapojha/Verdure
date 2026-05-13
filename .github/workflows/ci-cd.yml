@@ -107,6 +107,23 @@ jobs:
           python -m py_compile AI-Chatbot/app.py AI-Chatbot/train_and_evaluate.py AI-Chatbot/test_model.py
 
       # ---------------------------------
+      # Create fallback .env for Compose
+      # ---------------------------------
+      - name: Create fallback .env for Docker Compose
+        run: |
+          if [ ! -f .env ]; then
+            cat > .env <<'EOF'
+DB_PASSWORD=nbh05@
+DB_NAME=project
+DB_HOST=db
+DB_USER=root
+PORT=3030
+PREDICTOR_URL=http://verdure-ai-chatbot:5000/chat
+PREDICTOR_PORT=5000
+EOF
+          fi
+
+      # ---------------------------------
       # Validate Docker Compose
       # ---------------------------------
       - name: Validate Docker Compose
