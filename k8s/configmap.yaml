@@ -4,7 +4,6 @@ metadata:
   name: verdure-config
   namespace: verdure
 data:
-  DB_NAME: project
   BACKEND_PORT: "3030"
   FRONTEND_PORT: "80"
   PREDICTOR_PORT: "5000"

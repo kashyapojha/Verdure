@@ -321,6 +321,8 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
 
     steps:
       - name: Checkout code
@@ -346,6 +348,11 @@ jobs:
         if: env.KUBE_CONFIG_DATA != ''
         run: |
           kubectl version --client
+          kubectl create secret generic verdure-db-secret \
+            --from-literal=mysql-root-password="${{ env.DB_PASSWORD }}" \
+            --from-literal=db-password="${{ env.DB_PASSWORD }}" \
+            --from-literal=db-name="${{ env.DB_NAME }}" \
+            -n verdure --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -k k8s/
           kubectl set image deployment/verdure-backend backend=${{ env.DOCKERHUB_USERNAME }}/verdure-backend:latest -n verdure
           kubectl set image deployment/verdure-ai-chatbot ai-chatbot=${{ env.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest -n verdure

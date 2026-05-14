@@ -27,9 +27,9 @@ spec:
                   key: mysql-root-password
             - name: MYSQL_DATABASE
               valueFrom:
-                configMapKeyRef:
-                  name: verdure-config
-                  key: DB_NAME
+                secretKeyRef:
+                  name: verdure-db-secret
+                  key: db-name
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql

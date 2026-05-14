@@ -31,9 +31,9 @@ spec:
                   key: db-password
             - name: DB_NAME
               valueFrom:
-                configMapKeyRef:
-                  name: verdure-config
-                  key: DB_NAME
+                secretKeyRef:
+                  name: verdure-db-secret
+                  key: db-name
             - name: PREDICTOR_PORT
               value: "5000"
           readinessProbe:
