@@ -2,11 +2,11 @@ import mysql.connector
 import pandas as pd
 import os
 
-# Update these with your MySQL credentials
-MYSQL_HOST = 'localhost'
-MYSQL_USER = 'root'
-MYSQL_PASSWORD = 'nbh05@'
-MYSQL_DATABASE = 'project'  # <-- Replace with your actual database name
+# Update these with your MySQL credentials or use environment variables.
+MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
+MYSQL_USER = os.getenv('MYSQL_USER', 'root')
+MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', 'nbh05@')
+MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'project')  # <-- Replace with your actual database name
 
 # Directory containing CSV files
 CSV_DIR = 'mysql_tables_csv'
