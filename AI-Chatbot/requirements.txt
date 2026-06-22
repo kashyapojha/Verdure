@@ -1,6 +1,6 @@
 flask
-torch
-transformers
+torch==2.7.1
+transformers==4.53.0
 scikit-learn
 pandas
 numpy
@@ -8,7 +8,7 @@ numpy
 fastapi
 uvicorn[standard]
 pydantic
-flask_cors
+flask-cors
 
 mysql-connector-python
 accelerate
