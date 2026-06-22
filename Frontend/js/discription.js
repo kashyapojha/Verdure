@@ -1,5 +1,4 @@
-// const BASE_URL = "http://localhost:3030";
-const BASE_URL = window.APP_CONFIG.BASE_URL;
+const BASE_URL = "http://localhost:3030";
 
 function showfilters() {
     document.getElementById('filter-section').style.display = 'flex';
