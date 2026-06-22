@@ -7,6 +7,7 @@ const { execFile } = require('child_process');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3030;
+const PREDICTOR_URL = process.env.PREDICTOR_URL || 'http://localhost:5000/chat';
 
 // CORS first so static files also carry Access-Control-Allow-Origin
 app.use(cors({ origin: '*', credentials: true }));
@@ -325,7 +326,7 @@ app.post('/predict', async (req, res) => {
     if (!message) return res.status(400).json({ error: 'No message provided' });
 
     try {
-        const pyResp = await fetch(process.env.PREDICTOR_URL, {
+        const pyResp = await fetch(PREDICTOR_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
@@ -334,14 +335,20 @@ app.post('/predict', async (req, res) => {
         if (!pyResp.ok) {
             const t = await pyResp.text();
             console.error('Python predict error:', pyResp.status, t);
-            return res.status(500).json({ error: 'Prediction service error' });
+            return res.status(502).json({ error: 'Prediction service error', details: t });
         }
 
         const json = await pyResp.json();
         const numericId = json.numeric_id ?? null;
         const originalLabel = json.label ?? null;
 
-        if (!originalLabel) return res.status(500).json({ error: 'No label returned from predictor' });
+        if (!originalLabel) {
+            console.error('Predictor response missing label:', json);
+            return res.status(502).json({
+                error: json.error || 'No label returned from predictor',
+                response: json.response || null
+            });
+        }
 
         // Query DB for full plant info (joins similar to search/filter)
         const query = `
@@ -442,6 +449,16 @@ app.post('/predict', async (req, res) => {
 });
 
 // SPA catch-all: send index for frontend routes (after API paths)
+app.get('/health', async (req, res) => {
+    try {
+        const pyResp = await fetch(PREDICTOR_URL.replace('/chat', '/health'));
+        const data = pyResp.ok ? await pyResp.json() : { status: 'unreachable' };
+        res.json({ backend: 'OK', predictor: data });
+    } catch (e) {
+        res.status(503).json({ backend: 'OK', predictor: { status: 'unreachable', error: String(e) } });
+    }
+});
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../Frontend/index.html'));
 });

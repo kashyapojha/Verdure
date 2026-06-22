@@ -30,21 +30,30 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 logger.info(f"Using device: {device}")
 
 # Load BERT chatbot model
+model = None
+tokenizer = None
+label_encoder = None
+MODEL_LOADED = False
+
 try:
     logger.info("Loading BERT model and tokenizer...")
     model = BertForSequenceClassification.from_pretrained("bert_model")
     model.to(device)
     model.eval()
     tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
-    
+
     with open("label_encoder.pkl", "rb") as f:
         label_encoder = pickle.load(f)
+    MODEL_LOADED = True
     logger.info("Model, Tokenizer, and Label Encoder loaded successfully.")
 except Exception as e:
     logger.error(f"Failed to load model components: {e}")
 
 # Predict plant ID from user query
 def predict(query):
+    if not MODEL_LOADED:
+        logger.error("Prediction requested but model is not loaded.")
+        return None
     try:
         logger.info(f"Predicting for query: '{query}'")
         encoding = tokenizer(
@@ -113,7 +122,11 @@ def chat():
         prediction_result = predict(user_query)
         if not prediction_result:
             logger.error(f"Prediction failed for query: {user_query}")
-            return jsonify({"response": "Sorry, I could not understand your query."})
+            status = 503 if not MODEL_LOADED else 422
+            return jsonify({
+                "error": "Model not loaded" if not MODEL_LOADED else "Could not classify query",
+                "response": "Sorry, I could not understand your query."
+            }), status
 
         return jsonify({
             "numeric_id": prediction_result["numeric_id"],
@@ -125,9 +138,12 @@ def chat():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "OK"}), 200
+    return jsonify({
+        "status": "OK" if MODEL_LOADED else "DEGRADED",
+        "model_loaded": MODEL_LOADED
+    }), 200 if MODEL_LOADED else 503
 
 if __name__ == "__main__":
     port = int(os.getenv("PREDICTOR_PORT", 5000))
     logger.info(f"Starting Flask server on port {port}")
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)
