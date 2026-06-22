@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3030';
+const BASE_URL = 'http://51.21.140.105:3030';
 
 
 // Elements
