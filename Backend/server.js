@@ -446,4 +446,7 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../Frontend/index.html'));
 });
 
-app.listen(port, () => console.log(`Server running at http://0.0.0.0:${port}`));
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running at http://0.0.0.0:${port}`);
+    console.log(`Accessible locally at http://localhost:${port}`);
+});

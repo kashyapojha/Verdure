@@ -1,4 +1,5 @@
-const BASE_URL = 'http://localhost:3030';
+const BASE_URL = window.APP_CONFIG.BASE_URL;
+const ASSET_BASE_URL = window.APP_CONFIG.ASSET_BASE_URL;
 
 
 // Elements
@@ -32,7 +33,7 @@ if (!responseDiv) {
 // Chatbot integration
 async function askChatbot(userQuery) {
     try {
-        const response = await fetch("http://127.0.0.1:5000/chat", {
+        const response = await fetch(window.APP_CONFIG.CHATBOT_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: userQuery })
@@ -79,7 +80,7 @@ function displayPlantInfo(plant) {
     const withHost = (p) => {
         if (!p) return null;
         if (/^https?:\/\//i.test(p)) return p;
-        if (p.startsWith('/')) return `${BASE_URL}${p}`;
+        if (p.startsWith('/')) return `${ASSET_BASE_URL}${p}`;
         return p;
     };
 

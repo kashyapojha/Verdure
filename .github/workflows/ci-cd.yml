@@ -300,6 +300,13 @@ jobs:
 
             cd /home/ubuntu/Verdure
 
+            echo "📝 Writing .env from CI secrets"
+            printf '%s\n' \
+              "DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME}" \
+              "DB_NAME=${DB_NAME}" \
+              "DB_PASSWORD=${DB_PASSWORD}" \
+              > .env
+
             echo "📥 Syncing latest code"
             git fetch origin
             git reset --hard origin/main
