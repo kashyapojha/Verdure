@@ -1,6 +1,9 @@
 services:
   db:
-    image: karann24/verdure-db:latest
+    image: ${DOCKERHUB_USERNAME:-karann24}/verdure-db:latest
+    build:
+      context: ./DB
+      dockerfile: Dockerfile
     container_name: verdure-db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -19,7 +22,10 @@ services:
       - verdure-network
 
   backend:
-    image: karann24/verdure-backend:latest
+    image: ${DOCKERHUB_USERNAME:-karann24}/verdure-backend:latest
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
     container_name: verdure-backend
     environment:
       DB_HOST: db
@@ -37,7 +43,10 @@ services:
       - verdure-network
 
   ai_chatbot:
-    image: karann24/verdure-ai-chatbot:latest
+    image: ${DOCKERHUB_USERNAME:-karann24}/verdure-ai-chatbot:latest
+    build:
+      context: ./AI-Chatbot
+      dockerfile: Dockerfile
     container_name: verdure-ai-chatbot
     environment:
       DB_HOST: db
@@ -55,7 +64,10 @@ services:
       - verdure-network
 
   frontend:
-    image: karann24/verdure-frontend:latest
+    image: ${DOCKERHUB_USERNAME:-karann24}/verdure-frontend:latest
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
     container_name: verdure-frontend
     ports:
       - "3000:80"

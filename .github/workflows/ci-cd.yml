@@ -257,25 +257,7 @@ jobs:
       # Build Docker Images
       # ---------------------------------
       - name: Build Docker Images
-        run: docker compose build
-
-      # ---------------------------------
-      # Tag Docker Images
-      # ---------------------------------
-      - name: Tag Docker Images
-        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
-        run: |
-          docker tag verdure-db \
-          ${{ env.DOCKERHUB_USERNAME }}/verdure-db:latest
-
-          docker tag verdure-frontend \
-          ${{ env.DOCKERHUB_USERNAME }}/verdure-frontend:latest
-
-          docker tag verdure-backend \
-          ${{ env.DOCKERHUB_USERNAME }}/verdure-backend:latest
-
-          docker tag verdure-ai-chatbot \
-          ${{ env.DOCKERHUB_USERNAME }}/verdure-ai-chatbot:latest
+        run: docker compose build --no-cache
 
       # ---------------------------------
       # Push Docker Images
@@ -328,16 +310,7 @@ jobs:
             fi
 
             echo "🐳 Pulling latest Docker images..."
-            docker pull $DOCKERHUB_USERNAME/verdure-db:latest
-            docker pull $DOCKERHUB_USERNAME/verdure-frontend:latest
-            docker pull $DOCKERHUB_USERNAME/verdure-backend:latest
-            docker pull $DOCKERHUB_USERNAME/verdure-ai-chatbot:latest
-
-            echo "🏷️ Tagging Docker images locally..."
-            docker tag $DOCKERHUB_USERNAME/verdure-db:latest verdure-db:latest
-            docker tag $DOCKERHUB_USERNAME/verdure-frontend:latest verdure-frontend:latest
-            docker tag $DOCKERHUB_USERNAME/verdure-backend:latest verdure-backend:latest
-            docker tag $DOCKERHUB_USERNAME/verdure-ai-chatbot:latest verdure-ai-chatbot:latest
+            docker compose pull
 
             echo "🛑 Stopping old containers"
             docker compose down
