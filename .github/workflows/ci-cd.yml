@@ -298,7 +298,7 @@ jobs:
 
             echo "🚀 Starting Verdure deployment..."
 
-            cd /home/ec2-user/Verdure
+            cd /home/ubuntu/Verdure
 
             echo "📥 Syncing latest code"
             git fetch origin
