@@ -3,7 +3,7 @@ import logging
 import threading
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from transformers import BertTokenizer, BertForSequenceClassification
+from transformers import BertForSequenceClassification, PreTrainedTokenizerFast
 import torch
 import pickle
 import mysql.connector
@@ -13,7 +13,6 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 torch.set_num_threads(1)
 
-# --- LOGGING CONFIGURATION ---
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -21,8 +20,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- ENV CONFIGURATION ---
 basedir = os.path.abspath(os.path.dirname(__file__))
+MODEL_DIR = os.path.join(basedir, "bert_model")
+TOKENIZER_DIR = os.path.join(basedir, "bert_tokenizer")
+LABEL_ENCODER_PATH = os.path.join(basedir, "label_encoder.pkl")
+MODEL_WEIGHTS_PATH = os.path.join(MODEL_DIR, "model.safetensors")
+TOKENIZER_JSON_PATH = os.path.join(TOKENIZER_DIR, "tokenizer.json")
+
 env_path = os.path.join(basedir, "..", ".env")
 load_dotenv(env_path)
 logger.info(f"Loading .env from: {env_path}")
@@ -41,6 +45,29 @@ MODEL_LOADING = False
 MODEL_LOAD_ERROR = None
 
 
+def validate_artifacts():
+    """Ensure model/tokenizer files exist before loading (avoids cryptic stat(None) errors)."""
+    missing = [p for p in [MODEL_DIR, TOKENIZER_DIR, LABEL_ENCODER_PATH] if not os.path.exists(p)]
+    if missing:
+        raise FileNotFoundError(f"Missing artifact paths: {', '.join(missing)}")
+
+    if not os.path.isfile(MODEL_WEIGHTS_PATH):
+        raise FileNotFoundError(f"Missing model weights: {MODEL_WEIGHTS_PATH}")
+
+    weights_size = os.path.getsize(MODEL_WEIGHTS_PATH)
+    if weights_size < 100_000_000:
+        raise ValueError(
+            f"model.safetensors is only {weights_size} bytes — "
+            "Git LFS file was likely not pulled in the Docker image"
+        )
+
+    if not os.path.isfile(TOKENIZER_JSON_PATH):
+        raise FileNotFoundError(
+            f"Missing {TOKENIZER_JSON_PATH} — bert_tokenizer needs tokenizer.json "
+            "(vocab.txt alone is not shipped in this repo)"
+        )
+
+
 def load_model():
     global model, tokenizer, label_encoder, MODEL_LOADED, MODEL_LOADING, MODEL_LOAD_ERROR
     if MODEL_LOADING or MODEL_LOADED:
@@ -48,19 +75,30 @@ def load_model():
     MODEL_LOADING = True
     MODEL_LOAD_ERROR = None
     try:
-        logger.info("Loading BERT model and tokenizer...")
-        model = BertForSequenceClassification.from_pretrained(
-            "bert_model",
+        validate_artifacts()
+        logger.info("Loading BERT model from %s", MODEL_DIR)
+        loaded_model = BertForSequenceClassification.from_pretrained(
+            MODEL_DIR,
+            local_files_only=True,
             low_cpu_mem_usage=True
         )
-        model.to(device)
-        model.eval()
-        tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
+        loaded_model.to(device)
+        loaded_model.eval()
 
-        with open("label_encoder.pkl", "rb") as f:
-            label_encoder = pickle.load(f)
+        logger.info("Loading tokenizer from %s", TOKENIZER_DIR)
+        loaded_tokenizer = PreTrainedTokenizerFast.from_pretrained(
+            TOKENIZER_DIR,
+            local_files_only=True
+        )
+
+        with open(LABEL_ENCODER_PATH, "rb") as f:
+            loaded_label_encoder = pickle.load(f)
+
+        model = loaded_model
+        tokenizer = loaded_tokenizer
+        label_encoder = loaded_label_encoder
         MODEL_LOADED = True
-        logger.info("Model, Tokenizer, and Label Encoder loaded successfully.")
+        logger.info("Model, tokenizer, and label encoder loaded successfully.")
     except Exception as e:
         MODEL_LOAD_ERROR = str(e)
         logger.error(f"Failed to load model components: {e}")
@@ -74,7 +112,6 @@ def start_model_loader():
     return thread
 
 
-# Predict plant ID from user query
 def predict(query):
     if not MODEL_LOADED:
         logger.error("Prediction requested but model is not loaded.")
@@ -107,7 +144,6 @@ def predict(query):
         return None
 
 
-# Fetch plant data from MySQL
 def get_plant_data(plant_id):
     try:
         logger.info(f"Connecting to DB to fetch data for: {plant_id}")
@@ -142,7 +178,6 @@ def chat():
         logger.info(f"[POST /chat] Request from {client_ip} | Message: '{user_query}'")
 
         if not user_query:
-            logger.warning(f"Empty message received from {client_ip}")
             return jsonify({"error": "No message provided"}), 400
 
         if MODEL_LOADING:
@@ -151,9 +186,11 @@ def chat():
                 "response": "AI service is starting up. Please try again in a minute."
             }), 503
 
+        if not MODEL_LOADED and not MODEL_LOADING:
+            load_model()
+
         prediction_result = predict(user_query)
         if not prediction_result:
-            logger.error(f"Prediction failed for query: {user_query}")
             status = 503 if not MODEL_LOADED else 422
             return jsonify({
                 "error": MODEL_LOAD_ERROR or ("Model not loaded" if not MODEL_LOADED else "Could not classify query"),
@@ -166,12 +203,11 @@ def chat():
         })
     except Exception as e:
         logger.error(f"Chat error: {e}")
-        return jsonify({"response": "An error occurred while processing your request."}), 500
+        return jsonify({"error": str(e), "response": "An error occurred while processing your request."}), 500
 
 
 @app.route("/health", methods=["GET"])
 def health():
-    # Liveness: container is up (used by Docker healthcheck)
     return jsonify({
         "status": "OK",
         "model_loaded": MODEL_LOADED,
@@ -181,7 +217,6 @@ def health():
 
 @app.route("/ready", methods=["GET"])
 def ready():
-    # Readiness: model is loaded and predictions can run
     if MODEL_LOADED:
         return jsonify({"status": "ready", "model_loaded": True}), 200
     return jsonify({

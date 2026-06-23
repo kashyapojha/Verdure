@@ -1,8 +1,9 @@
 flask
 torch==2.7.1
 transformers==4.53.0
+tokenizers
 protobuf
-scikit-learn
+scikit-learn==1.8.0
 pandas
 numpy
 

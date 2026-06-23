@@ -351,7 +351,10 @@ app.post('/predict', async (req, res) => {
         if (!pyResp.ok) {
             const t = await pyResp.text();
             console.error('Python predict error:', pyResp.status, t);
-            return res.status(502).json({ error: 'Prediction service error', details: t });
+            return res.status(pyResp.status === 503 ? 503 : 502).json({
+                error: 'Prediction service error',
+                details: t
+            });
         }
 
         const json = await pyResp.json();
