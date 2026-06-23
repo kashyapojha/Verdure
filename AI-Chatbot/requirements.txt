@@ -1,6 +1,7 @@
 flask
 torch==2.7.1
 transformers==4.53.0
+protobuf
 scikit-learn
 pandas
 numpy
