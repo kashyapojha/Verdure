@@ -8,6 +8,10 @@ import pickle
 import mysql.connector
 from dotenv import load_dotenv
 
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+torch.set_num_threads(1)
+
 # --- LOGGING CONFIGURATION ---
 logging.basicConfig(
     level=logging.INFO,
@@ -37,7 +41,10 @@ MODEL_LOADED = False
 
 try:
     logger.info("Loading BERT model and tokenizer...")
-    model = BertForSequenceClassification.from_pretrained("bert_model")
+    model = BertForSequenceClassification.from_pretrained(
+        "bert_model",
+        low_cpu_mem_usage=True
+    )
     model.to(device)
     model.eval()
     tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")

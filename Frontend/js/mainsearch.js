@@ -51,6 +51,13 @@ function displayPlantInfo(plant) {
     const id = plant.plant_id ? plant.plant_id.toLowerCase() : null;
     const assets = Array.isArray(plant.asset_files) ? plant.asset_files : [];
 
+    if (id) {
+        if (!plant.model_path) plant.model_path = `/assets1/${id}/${id}.gltf`;
+        if (!plant.image_path) plant.image_path = `/assets1/${id}/Image_0.jpg`;
+        if (!plant.preview_image) plant.preview_image = plant.image_path;
+        if (!plant.pant_image) plant.pant_image = `/imgs/${plant.plant_id}.jpg`;
+    }
+
     // choose gltf
     if (!plant.model_path && assets.length) {
         const exactGltf = id ? assets.find(a => a.toLowerCase().endsWith(`/${id}.gltf`)) : null;
@@ -84,14 +91,15 @@ function displayPlantInfo(plant) {
         return p;
     };
 
-    const imageUrl = withHost(plant.image_path);
+    const imageUrl = withHost(plant.image_path || plant.preview_image);
     const modelUrl = withHost(plant.model_path);
     const pantImageUrl = withHost(plant.pant_image);
+    const displayImageUrl = pantImageUrl || imageUrl;
 
-    // Image (background) and optional pant_image displayed below
+    // Image (background) — prefer /imgs photo, fall back to assets1/Image_0.jpg
     let imgHtml = '';
-    if (pantImageUrl) {
-        imgHtml += `<div class="plant-img" style="background:url('${pantImageUrl}'); background-size:cover; background-position:center;"></div>`;
+    if (displayImageUrl) {
+        imgHtml += `<div class="plant-img" style="background:url('${displayImageUrl}'); background-size:cover; background-position:center;"></div>`;
     }
     img.innerHTML = imgHtml;
 
@@ -155,11 +163,13 @@ async function doPredictSearch(query) {
                 resultsArea.appendChild(card);
             });
         } else if (data && data.message) {
-            // responseDiv.innerText = data.message; // disabled UI
             noOfResults.textContent = 0;
+            resultsArea.innerHTML = `<p>${data.message}</p>`;
         } else {
-            // responseDiv.innerText = 'No plant found'; // disabled UI
             noOfResults.textContent = 0;
+            const errMsg = data?.error || data?.response || `Search failed (${resp.status})`;
+            resultsArea.innerHTML = `<p class="search-error">${errMsg}</p>`;
+            console.error('Predict failed:', resp.status, data);
         }
     } catch (err) {
         console.error('Predict error:', err);

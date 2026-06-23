@@ -240,6 +240,9 @@ jobs:
           test -d AI-Chatbot/bert_model
           test -d AI-Chatbot/bert_tokenizer
           test -f AI-Chatbot/label_encoder.pkl
+          model_size=$(stat -c%s AI-Chatbot/bert_model/model.safetensors)
+          echo "model.safetensors size: ${model_size} bytes"
+          test "$model_size" -gt 100000000
           echo "AI-Chatbot model assets are present in the repo."
 
       # ---------------------------------
@@ -328,7 +331,7 @@ jobs:
             docker compose down
 
             echo "▶️ Starting updated containers"
-            docker compose up -d --remove-orphans
+            docker compose up -d --remove-orphans --wait
 
             echo "🧹 Cleaning unused Docker images"
             docker image prune -f

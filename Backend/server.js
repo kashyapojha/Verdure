@@ -32,6 +32,22 @@ connection.connect(err => {
     console.log('Connected to database');
 });
 
+// Standard asset URLs (frontend container serves these; backend Docker has no Frontend files)
+function applyStandardAssetPaths(plantObj) {
+    if (!plantObj || !plantObj.plant_id) return plantObj;
+    const plantId = plantObj.plant_id.toLowerCase();
+    const defaults = {
+        model_path: `/assets1/${plantId}/${plantId}.gltf`,
+        image_path: `/assets1/${plantId}/Image_0.jpg`,
+        preview_image: `/assets1/${plantId}/Image_0.jpg`,
+        pant_image: `/imgs/${plantObj.plant_id}.jpg`
+    };
+    for (const [key, value] of Object.entries(defaults)) {
+        if (!plantObj[key]) plantObj[key] = value;
+    }
+    return plantObj;
+}
+
 // Log requests to assets1 so we can trace frontend fetches
 app.use((req, res, next) => {
     if (req.path && req.path.startsWith('/assets1/')) {
@@ -145,7 +161,7 @@ app.get('/search', (req, res) => {
             }
         });
 
-        res.json(Object.values(plantsMap));
+        res.json(Object.values(plantsMap).map(applyStandardAssetPaths));
     });
 });
 
@@ -272,7 +288,7 @@ app.post('/api/filter', (req, res) => {
             }
         });
 
-        res.json(Object.values(plantsMap));
+        res.json(Object.values(plantsMap).map(applyStandardAssetPaths));
     });
 });
 
@@ -440,7 +456,10 @@ app.post('/predict', async (req, res) => {
                 if (pantExists) plantObj.pant_image = `/imgs/${plantObj.plant_id}.jpg`;
             } catch (e) {}
 
-            return res.json({ prediction: { numeric_id: numericId, label: originalLabel }, plant: plantObj });
+            return res.json({
+                prediction: { numeric_id: numericId, label: originalLabel },
+                plant: applyStandardAssetPaths(plantObj)
+            });
         });
     } catch (e) {
         console.error('Predict route error:', e);
