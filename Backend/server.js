@@ -470,9 +470,17 @@ app.post('/predict', async (req, res) => {
 // SPA catch-all: send index for frontend routes (after API paths)
 app.get('/health', async (req, res) => {
     try {
-        const pyResp = await fetch(PREDICTOR_URL.replace('/chat', '/health'));
-        const data = pyResp.ok ? await pyResp.json() : { status: 'unreachable' };
-        res.json({ backend: 'OK', predictor: data });
+        const base = PREDICTOR_URL.replace('/chat', '');
+        const [healthResp, readyResp] = await Promise.all([
+            fetch(`${base}/health`),
+            fetch(`${base}/ready`)
+        ]);
+        const health = healthResp.ok ? await healthResp.json() : { status: 'unreachable' };
+        let ready = { status: 'not_ready' };
+        try {
+            ready = await readyResp.json();
+        } catch (_) { /* ignore */ }
+        res.json({ backend: 'OK', predictor: health, predictor_ready: ready });
     } catch (e) {
         res.status(503).json({ backend: 'OK', predictor: { status: 'unreachable', error: String(e) } });
     }

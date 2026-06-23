@@ -1,5 +1,6 @@
 import os
 import logging
+import threading
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from transformers import BertTokenizer, BertForSequenceClassification
@@ -29,32 +30,49 @@ logger.info(f"Loading .env from: {env_path}")
 app = Flask(__name__)
 CORS(app)
 
-# Device setup
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 logger.info(f"Using device: {device}")
 
-# Load BERT chatbot model
 model = None
 tokenizer = None
 label_encoder = None
 MODEL_LOADED = False
+MODEL_LOADING = False
+MODEL_LOAD_ERROR = None
 
-try:
-    logger.info("Loading BERT model and tokenizer...")
-    model = BertForSequenceClassification.from_pretrained(
-        "bert_model",
-        low_cpu_mem_usage=True
-    )
-    model.to(device)
-    model.eval()
-    tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
 
-    with open("label_encoder.pkl", "rb") as f:
-        label_encoder = pickle.load(f)
-    MODEL_LOADED = True
-    logger.info("Model, Tokenizer, and Label Encoder loaded successfully.")
-except Exception as e:
-    logger.error(f"Failed to load model components: {e}")
+def load_model():
+    global model, tokenizer, label_encoder, MODEL_LOADED, MODEL_LOADING, MODEL_LOAD_ERROR
+    if MODEL_LOADING or MODEL_LOADED:
+        return
+    MODEL_LOADING = True
+    MODEL_LOAD_ERROR = None
+    try:
+        logger.info("Loading BERT model and tokenizer...")
+        model = BertForSequenceClassification.from_pretrained(
+            "bert_model",
+            low_cpu_mem_usage=True
+        )
+        model.to(device)
+        model.eval()
+        tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
+
+        with open("label_encoder.pkl", "rb") as f:
+            label_encoder = pickle.load(f)
+        MODEL_LOADED = True
+        logger.info("Model, Tokenizer, and Label Encoder loaded successfully.")
+    except Exception as e:
+        MODEL_LOAD_ERROR = str(e)
+        logger.error(f"Failed to load model components: {e}")
+    finally:
+        MODEL_LOADING = False
+
+
+def start_model_loader():
+    thread = threading.Thread(target=load_model, daemon=True, name="model-loader")
+    thread.start()
+    return thread
+
 
 # Predict plant ID from user query
 def predict(query):
@@ -81,12 +99,13 @@ def predict(query):
 
         predicted_id = prediction.item()
         original_label = label_encoder.inverse_transform([predicted_id])[0]
-        
+
         logger.info(f"Prediction successful: ID={predicted_id}, Label={original_label}")
         return {"numeric_id": predicted_id, "label": original_label}
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         return None
+
 
 # Fetch plant data from MySQL
 def get_plant_data(plant_id):
@@ -103,7 +122,7 @@ def get_plant_data(plant_id):
         plant_data = cursor.fetchone()
         cursor.close()
         conn.close()
-        
+
         if plant_data:
             logger.info("Plant data retrieved successfully.")
         else:
@@ -113,7 +132,7 @@ def get_plant_data(plant_id):
         logger.error(f"Database connection error: {e}")
         return None
 
-# Chatbot route
+
 @app.route("/chat", methods=["POST"])
 def chat():
     client_ip = request.remote_addr
@@ -126,12 +145,18 @@ def chat():
             logger.warning(f"Empty message received from {client_ip}")
             return jsonify({"error": "No message provided"}), 400
 
+        if MODEL_LOADING:
+            return jsonify({
+                "error": "Model is still loading",
+                "response": "AI service is starting up. Please try again in a minute."
+            }), 503
+
         prediction_result = predict(user_query)
         if not prediction_result:
             logger.error(f"Prediction failed for query: {user_query}")
             status = 503 if not MODEL_LOADED else 422
             return jsonify({
-                "error": "Model not loaded" if not MODEL_LOADED else "Could not classify query",
+                "error": MODEL_LOAD_ERROR or ("Model not loaded" if not MODEL_LOADED else "Could not classify query"),
                 "response": "Sorry, I could not understand your query."
             }), status
 
@@ -143,14 +168,32 @@ def chat():
         logger.error(f"Chat error: {e}")
         return jsonify({"response": "An error occurred while processing your request."}), 500
 
+
 @app.route("/health", methods=["GET"])
 def health():
+    # Liveness: container is up (used by Docker healthcheck)
     return jsonify({
-        "status": "OK" if MODEL_LOADED else "DEGRADED",
-        "model_loaded": MODEL_LOADED
-    }), 200 if MODEL_LOADED else 503
+        "status": "OK",
+        "model_loaded": MODEL_LOADED,
+        "model_loading": MODEL_LOADING
+    }), 200
+
+
+@app.route("/ready", methods=["GET"])
+def ready():
+    # Readiness: model is loaded and predictions can run
+    if MODEL_LOADED:
+        return jsonify({"status": "ready", "model_loaded": True}), 200
+    return jsonify({
+        "status": "not_ready",
+        "model_loaded": False,
+        "model_loading": MODEL_LOADING,
+        "error": MODEL_LOAD_ERROR
+    }), 503
+
 
 if __name__ == "__main__":
     port = int(os.getenv("PREDICTOR_PORT", 5000))
     logger.info(f"Starting Flask server on port {port}")
+    start_model_loader()
     app.run(host="0.0.0.0", port=port, debug=False)
