@@ -208,11 +208,30 @@ def chat():
 
 @app.route("/health", methods=["GET"])
 def health():
+    try:
+        # Check DB connection
+        conn = mysql.connector.connect(
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            database=os.getenv('DB_NAME'),
+            connection_timeout=3
+        )
+        conn.close()
+        db_status = 'connected'
+    except Exception as e:
+        db_status = 'disconnected'
+
+    status_code = 200 if (MODEL_LOADED and db_status == 'connected') else 503
+
     return jsonify({
-        "status": "OK",
-        "model_loaded": MODEL_LOADED,
-        "model_loading": MODEL_LOADING
-    }), 200
+        'status': 'healthy' if status_code == 200 else 'unhealthy',
+        'service': 'ai-chatbot',
+        'model_loaded': MODEL_LOADED,
+        'model_loading': MODEL_LOADING,
+        'db': db_status,
+        'timestamp': str(__import__('datetime').datetime.now())
+    }), status_code
 
 
 @app.route("/ready", methods=["GET"])

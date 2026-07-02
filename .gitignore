@@ -1,3 +1,4 @@
 node_modules/
 .env
 venv/
+k8s/02-secret.yaml
