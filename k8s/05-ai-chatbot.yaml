@@ -49,11 +49,11 @@ spec:
             timeoutSeconds: 10
           resources:
             requests:
-              memory: "1Gi"     # BERT needs more memory than typical services
-              cpu: "500m"
+              memory: "256Mi"     # BERT needs more memory than typical services
+              cpu: "100m"
             limits:
-              memory: "2Gi"
-              cpu: "1000m"
+              memory: "512Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
